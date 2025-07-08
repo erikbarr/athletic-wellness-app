@@ -32,25 +32,20 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid API key format' });
     }
     
-    // UPDATED PROMPT - Much simpler and more readable
+    // UPDATED PROMPT - Friendly report format with short paragraphs
     const prompt = `Please create a simple, easy-to-read summary of this athletic wellness evaluation. 
 
 TRANSCRIPT: "${transcript}"
 
 Please write a clear summary that:
 - Uses simple, everyday language (8th grade reading level)
+- Write in short paragraphs like a friendly report
 - Keeps sentences short and clear
 - Uses some medical terms but explains them simply
 - Is direct and to the point
 - Focuses on what matters most
 
-Format like this:
-- Main concerns: [What hurts or doesn't work well]
-- Areas checked: [Body parts examined] 
-- Key findings: [What was discovered]
-- Recommendations: [What to focus on]
-
-Keep it brief but complete. Write like you're explaining to a smart teenager.
+Write it like you're a friendly healthcare professional explaining the findings to a colleague in a casual but professional way. Keep paragraphs short (1-3 sentences each) and make it flow naturally.
 
 SUMMARY:`;
 
@@ -76,7 +71,7 @@ SUMMARY:`;
           },
           body: JSON.stringify({
             model: model,
-            max_tokens: 250,  // Reduced from 300 to keep summaries shorter
+            max_tokens: 250,
             messages: [{
               role: 'user',
               content: prompt
