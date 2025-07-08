@@ -1,25 +1,42 @@
 export default async function handler(req, res) {
-  // Enable CORS
+  // Enable CORS for all origins
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
   
   // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
+    console.log('Handling OPTIONS preflight request');
     res.status(200).end();
     return;
   }
   
+  // Only allow POST requests
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    console.log(`Method ${req.method} not allowed`);
+    return res.status(405).json({ error: 'Method not allowed. Use POST.' });
   }
   
   try {
+    console.log('Processing POST request...');
+    console.log('Request headers:', req.headers);
+    console.log('Request body:', req.body);
+    
     const { transcript, apiKey } = req.body;
     
-    if (!transcript || !apiKey) {
-      return res.status(400).json({ error: 'Missing transcript or API key' });
+    if (!transcript) {
+      return res.status(400).json({ error: 'Missing transcript' });
     }
+    
+    if (!apiKey) {
+      return res.status(400).json({ error: 'Missing API key' });
+    }
+    
+    if (!apiKey.startsWith('sk-ant-')) {
+      return res.status(400).json({ error: 'Invalid API key format' });
+    }
+    
+    console.log('Making request to Claude API...');
     
     const prompt = `You are a medical AI assistant helping to summarize voice notes from athletic wellness evaluations. 
 
@@ -55,14 +72,28 @@ SUMMARY:`;
       })
     });
 
+    console.log('Claude API response status:', response.status);
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(`Claude API error: ${response.status} - ${errorData.error?.message || response.statusText}`);
+      const errorText = await response.text();
+      console.log('Claude API error:', errorText);
+      
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch (e) {
+        errorData = { error: errorText };
+      }
+      
+      return res.status(response.status).json({ 
+        error: errorData.error?.message || errorData.error || `Claude API error: ${response.status}` 
+      });
     }
 
     const data = await response.json();
     const summary = data.content[0].text.trim();
     
+    console.log('Successfully generated summary');
     res.status(200).json({ summary });
     
   } catch (error) {
