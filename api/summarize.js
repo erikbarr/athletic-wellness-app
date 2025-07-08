@@ -18,8 +18,6 @@ export default async function handler(req, res) {
   }
   
   try {
-    console.log('Processing POST request...');
-    
     const { transcript, apiKey } = req.body;
     
     if (!transcript) {
@@ -34,22 +32,25 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid API key format' });
     }
     
-    console.log('Making request to Claude API...');
-    
-    const prompt = `You are a medical AI assistant helping to summarize voice notes from athletic wellness evaluations. 
+    // UPDATED PROMPT - Much simpler and more readable
+    const prompt = `Please create a simple, easy-to-read summary of this athletic wellness evaluation. 
 
-Please analyze this voice transcript from a medical professional conducting a wellness assessment and create a concise, professional clinical summary:
+TRANSCRIPT: "${transcript}"
 
-TRANSCRIPT:
-"${transcript}"
+Please write a clear summary that:
+- Uses simple, everyday language (8th grade reading level)
+- Keeps sentences short and clear
+- Uses some medical terms but explains them simply
+- Is direct and to the point
+- Focuses on what matters most
 
-Please provide a structured summary that includes:
-1. Key findings (pain, mobility issues, strength concerns)
-2. Affected body regions/segments
-3. Clinical observations
-4. Any recommended focus areas
+Format like this:
+- Main concerns: [What hurts or doesn't work well]
+- Areas checked: [Body parts examined] 
+- Key findings: [What was discovered]
+- Recommendations: [What to focus on]
 
-Keep the summary concise but clinically relevant for an athletic wellness assessment. Use professional medical terminology when appropriate.
+Keep it brief but complete. Write like you're explaining to a smart teenager.
 
 SUMMARY:`;
 
@@ -75,15 +76,13 @@ SUMMARY:`;
           },
           body: JSON.stringify({
             model: model,
-            max_tokens: 300,
+            max_tokens: 250,  // Reduced from 300 to keep summaries shorter
             messages: [{
               role: 'user',
               content: prompt
             }]
           })
         });
-
-        console.log(`${model} response status:`, response.status);
 
         if (response.ok) {
           const data = await response.json();
@@ -93,10 +92,8 @@ SUMMARY:`;
           return res.status(200).json({ summary, modelUsed: model });
         }
         
-        // If not ok, parse the error
+        // If not ok, parse the error and try next model
         const errorText = await response.text();
-        console.log(`${model} error:`, errorText);
-        
         let errorData;
         try {
           errorData = JSON.parse(errorText);
@@ -111,14 +108,12 @@ SUMMARY:`;
           throw new Error(errorData.error?.message || errorData.error || `API error: ${response.status}`);
         }
         
-        // Continue to next model if this was a model-specific error
         console.log(`Model ${model} not available, trying next...`);
         
       } catch (fetchError) {
         console.log(`Error with model ${model}:`, fetchError.message);
         lastError = { error: fetchError.message };
         
-        // If it's not a model error, don't try other models
         if (!fetchError.message.includes('model') && !fetchError.message.includes('Model')) {
           throw fetchError;
         }
@@ -133,7 +128,6 @@ SUMMARY:`;
     
     let errorMessage = error.message;
     
-    // Provide helpful error messages
     if (errorMessage.includes('model')) {
       errorMessage = 'Your API key does not have access to Claude models. Please check your Anthropic account subscription and billing.';
     } else if (errorMessage.includes('401') || errorMessage.includes('authentication')) {
