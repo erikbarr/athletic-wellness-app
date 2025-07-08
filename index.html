@@ -3300,8 +3300,14 @@
             // Show loading state
             if (transcriptEl) {
                 transcriptEl.innerHTML = `
-                    <strong>Original:</strong> ${fullTranscript}<br><br>
-                    <strong>Summary:</strong> <span style="color: #667eea;">🔄 ${useClaudeAI ? 'Generating AI summary...' : 'Creating summary...'}</span>
+                    <div style="margin-bottom: 15px;">
+                        <strong>Original:</strong><br>
+                        ${fullTranscript}
+                    </div>
+                    <div>
+                        <strong>Summary:</strong><br>
+                        <span style="color: #667eea;">🔄 ${useClaudeAI ? 'Generating AI summary...' : 'Creating summary...'}</span>
+                    </div>
                 `;
             }
 
@@ -3314,11 +3320,20 @@
                     summary = generateSimpleNoteSummary(fullTranscript);
                 }
                 
-                // Update the display with summary
+                console.log('Generated summary:', summary);
+                console.log('Using Claude AI:', useClaudeAI);
+                
+                // Update the display with summary - cleaner HTML structure
                 if (transcriptEl) {
                     transcriptEl.innerHTML = `
-                        <strong>Original:</strong> ${fullTranscript}<br><br>
-                        <strong>Summary ${useClaudeAI ? '(AI)' : '(Simple)'}:</strong> ${summary}
+                        <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                            <strong>Original:</strong><br>
+                            <span style="font-style: italic; color: #666;">${fullTranscript}</span>
+                        </div>
+                        <div style="padding: 10px; background: #e8f5e9; border-radius: 5px;">
+                            <strong>Summary ${useClaudeAI ? '(AI)' : '(Simple)'}:</strong><br>
+                            <span id="summary-content">${summary}</span>
+                        </div>
                     `;
                 }
                 
@@ -3328,9 +3343,15 @@
                 const fallbackSummary = generateSimpleNoteSummary(fullTranscript);
                 if (transcriptEl) {
                     transcriptEl.innerHTML = `
-                        <strong>Original:</strong> ${fullTranscript}<br><br>
-                        <strong>Summary (Fallback):</strong> ${fallbackSummary}<br>
-                        <small style="color: #dc3545;">Note: AI summarization failed, using simple method</small>
+                        <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                            <strong>Original:</strong><br>
+                            <span style="font-style: italic; color: #666;">${fullTranscript}</span>
+                        </div>
+                        <div style="padding: 10px; background: #fff3cd; border-radius: 5px;">
+                            <strong>Summary (Fallback):</strong><br>
+                            <span id="summary-content">${fallbackSummary}</span><br>
+                            <small style="color: #dc3545;">Note: AI summarization failed, using simple method</small>
+                        </div>
                     `;
                 }
             }
@@ -3408,31 +3429,115 @@
             const transcriptTextEl = document.getElementById('transcript-text');
             if (!transcriptTextEl) return;
             
-            // Extract summary from the display (handles both AI and simple summaries)
-            const innerHTML = transcriptTextEl.innerHTML;
+            console.log('useTranscript called');
+            console.log('Transcript element HTML:', transcriptTextEl.innerHTML);
+            
             let summary = '';
             
-            // Look for summary text after "Summary" or "Summary (AI)" or "Summary (Simple)"
-            const summaryMatch = innerHTML.match(/<strong>Summary[^:]*:<\/strong>\s*(.+?)(?:<br|$)/i);
-            if (summaryMatch) {
-                // Remove HTML tags and get clean text
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = summaryMatch[1];
-                summary = tempDiv.textContent || tempDiv.innerText || '';
-            } else {
-                // Fallback to original transcript if no summary found
-                summary = fullTranscript;
+            // Method 1: Try to get summary from the specific summary-content element
+            const summaryContentEl = document.getElementById('summary-content');
+            if (summaryContentEl) {
+                summary = summaryContentEl.textContent || summaryContentEl.innerText || '';
+                console.log('Found summary from summary-content element:', summary);
             }
+            
+            // Method 2: Extract from HTML if Method 1 failed
+            if (!summary || summary.trim().length < 10) {
+                console.log('Trying to extract from HTML...');
+                const innerHTML = transcriptTextEl.innerHTML;
+                
+                // Try multiple patterns to extract the summary
+                let summaryMatch = null;
+                
+                // Pattern 1: Look for "Summary (AI):" or "Summary (Simple):"
+                summaryMatch = innerHTML.match(/<strong>Summary\s*\([^)]+\):\s*<\/strong>\s*<br>\s*<span[^>]*>([^<]+)<\/span>/is);
+                
+                // Pattern 2: Look for just "Summary:"
+                if (!summaryMatch) {
+                    summaryMatch = innerHTML.match(/<strong>Summary:\s*<\/strong>\s*<br>\s*<span[^>]*>([^<]+)<\/span>/is);
+                }
+                
+                // Pattern 3: Look for content after any "Summary" label
+                if (!summaryMatch) {
+                    summaryMatch = innerHTML.match(/<strong>[^<]*Summary[^<]*:\s*<\/strong>\s*<br>\s*<span[^>]*>([^<]+)<\/span>/is);
+                }
+                
+                if (summaryMatch && summaryMatch[1]) {
+                    summary = summaryMatch[1].trim();
+                    console.log('Extracted summary from HTML pattern:', summary);
+                }
+            }
+            
+            // Method 3: Try text content parsing if still no summary
+            if (!summary || summary.trim().length < 10) {
+                console.log('Trying text content parsing...');
+                const textContent = transcriptTextEl.textContent || transcriptTextEl.innerText || '';
+                const summaryIndex = textContent.toLowerCase().indexOf('summary');
+                
+                if (summaryIndex > -1) {
+                    const colonIndex = textContent.indexOf(':', summaryIndex);
+                    if (colonIndex > -1) {
+                        summary = textContent.substring(colonIndex + 1).trim();
+                        // Remove any "Note:" text and everything after it
+                        const noteIndex = summary.toLowerCase().indexOf('note:');
+                        if (noteIndex > -1) {
+                            summary = summary.substring(0, noteIndex).trim();
+                        }
+                        console.log('Extracted summary from text content:', summary);
+                    }
+                }
+            }
+            
+            // Method 4: Last resort - use full transcript
+            if (!summary || summary.trim().length < 10) {
+                console.log('No valid summary found, using full transcript as fallback');
+                summary = fullTranscript || 'No transcript available';
+            }
+            
+            // Clean up the summary
+            summary = summary.replace(/\s+/g, ' ').trim();
+            
+            console.log('Final summary to be used:', summary);
             
             // Add to existing notes or replace
-            const currentNotes = document.getElementById('eval-notes').value;
-            if (currentNotes.trim()) {
-                document.getElementById('eval-notes').value = currentNotes + '\n\n' + summary;
-            } else {
-                document.getElementById('eval-notes').value = summary;
+            const evalNotesEl = document.getElementById('eval-notes');
+            if (!evalNotesEl) {
+                console.error('Could not find eval-notes element');
+                return;
             }
             
+            const currentNotes = evalNotesEl.value;
+            
+            if (currentNotes.trim()) {
+                evalNotesEl.value = currentNotes + '\n\n' + summary;
+            } else {
+                evalNotesEl.value = summary;
+            }
+            
+            // Clear the transcript display
             clearTranscript();
+            
+            // Show confirmation with visual feedback
+            console.log('Summary successfully added to eval notes');
+            evalNotesEl.style.backgroundColor = '#e8f5e9';
+            evalNotesEl.style.border = '2px solid #28a745';
+            
+            setTimeout(() => {
+                evalNotesEl.style.backgroundColor = '';
+                evalNotesEl.style.border = '';
+            }, 1500);
+            
+            // Optional: Show a brief success message
+            const successMsg = document.createElement('div');
+            successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #28a745; color: white; padding: 10px 15px; border-radius: 5px; z-index: 1000; font-size: 14px;';
+            successMsg.textContent = '✅ Summary added to notes!';
+            document.body.appendChild(successMsg);
+            
+            setTimeout(() => {
+                if (successMsg.parentNode) {
+                    successMsg.parentNode.removeChild(successMsg);
+                }
+            }, 2000);
         }
 
         function clearTranscript() {
