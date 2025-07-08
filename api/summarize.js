@@ -32,22 +32,22 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid API key format' });
     }
     
-    // UPDATED PROMPT - Friendly report format with short paragraphs
-    const prompt = `Please create a simple, easy-to-read summary of this athletic wellness evaluation. 
+    // UPDATED PROMPT - Simple clarity editing approach
+    const prompt = `Please revise this voice transcript to improve clarity and readability, while keeping the same meaning and information.
 
-TRANSCRIPT: "${transcript}"
+ORIGINAL TRANSCRIPT: "${transcript}"
 
-Please write a clear summary that:
-- Uses simple, everyday language (8th grade reading level)
-- Write in short paragraphs like a friendly report
-- Keeps sentences short and clear
-- Uses some medical terms but explains them simply
-- Is direct and to the point
-- Focuses on what matters most
+Please:
+- Fix any unclear or incomplete sentences
+- Write at an 8th grade reading level
+- Keep the same terminology and information that was spoken
+- Make it flow better and be easier to read
+- Don't add new medical terms or change the style
+- Just clean up the language to make it clearer
 
-Write it like you're a friendly healthcare professional explaining the findings to a colleague in a casual but professional way. Keep paragraphs short (1-3 sentences each) and make it flow naturally.
+Simply rewrite it as a clear, well-organized note that says the same things in a more readable way.
 
-SUMMARY:`;
+REVISED NOTE:`;
 
     // Try different models in order of preference
     const models = [
@@ -71,7 +71,7 @@ SUMMARY:`;
           },
           body: JSON.stringify({
             model: model,
-            max_tokens: 250,
+            max_tokens: 200,  // Reduced since we're just editing, not expanding
             messages: [{
               role: 'user',
               content: prompt
