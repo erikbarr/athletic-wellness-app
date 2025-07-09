@@ -32,22 +32,21 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid API key format' });
     }
     
-    // UPDATED PROMPT - Simple clarity editing approach
+    // UPDATED PROMPT - Cleaner, no extra labels or notes
     const prompt = `Please revise this voice transcript to improve clarity and readability, while keeping the same meaning and information.
 
-ORIGINAL TRANSCRIPT: "${transcript}"
+Original: "${transcript}"
 
-Please:
+Instructions:
 - Fix any unclear or incomplete sentences
 - Write at an 8th grade reading level
 - Keep the same terminology and information that was spoken
 - Make it flow better and be easier to read
 - Don't add new medical terms or change the style
 - Just clean up the language to make it clearer
+- Return only the revised text, nothing else
 
-Simply rewrite it as a clear, well-organized note that says the same things in a more readable way.
-
-REVISED NOTE:`;
+Revised version:`;
 
     // Try different models in order of preference
     const models = [
@@ -71,7 +70,7 @@ REVISED NOTE:`;
           },
           body: JSON.stringify({
             model: model,
-            max_tokens: 200,  // Reduced since we're just editing, not expanding
+            max_tokens: 200,
             messages: [{
               role: 'user',
               content: prompt
@@ -81,7 +80,10 @@ REVISED NOTE:`;
 
         if (response.ok) {
           const data = await response.json();
-          const summary = data.content[0].text.trim();
+          let summary = data.content[0].text.trim();
+          
+          // Clean up the response - remove unwanted prefixes and suffixes
+          summary = cleanupSummary(summary);
           
           console.log(`Successfully generated summary using ${model}`);
           return res.status(200).json({ summary, modelUsed: model });
@@ -137,4 +139,57 @@ REVISED NOTE:`;
       error: errorMessage
     });
   }
+}
+
+// Clean up AI response to remove unwanted text
+function cleanupSummary(text) {
+  let cleaned = text;
+  
+  // Remove common prefixes that might appear
+  const prefixesToRemove = [
+    'REVISED NOTE:',
+    'Revised Note:',
+    'revised note:',
+    'REVISED:',
+    'Revised:',
+    'revised:',
+    'NOTE:',
+    'Note:',
+    'note:',
+    'SUMMARY:',
+    'Summary:',
+    'summary:'
+  ];
+  
+  prefixesToRemove.forEach(prefix => {
+    if (cleaned.startsWith(prefix)) {
+      cleaned = cleaned.substring(prefix.length).trim();
+    }
+  });
+  
+  // Remove common suffixes or notes that might be added
+  const suffixesToRemove = [
+    'Note:',
+    'NOTE:',
+    'Additional notes:',
+    'Additional Notes:',
+    'ADDITIONAL NOTES:'
+  ];
+  
+  suffixesToRemove.forEach(suffix => {
+    const index = cleaned.lastIndexOf(suffix);
+    if (index > -1 && index > cleaned.length * 0.7) { // Only remove if it's near the end
+      cleaned = cleaned.substring(0, index).trim();
+    }
+  });
+  
+  // Remove any trailing periods that might be doubled up
+  cleaned = cleaned.replace(/\.+$/, '.');
+  
+  // Ensure it doesn't end with incomplete sentences due to cleanup
+  if (cleaned.endsWith(',') || cleaned.endsWith(';')) {
+    cleaned = cleaned.slice(0, -1) + '.';
+  }
+  
+  return cleaned.trim();
 }
