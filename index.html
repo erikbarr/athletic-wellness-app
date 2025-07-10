@@ -2081,226 +2081,400 @@
                 <head>
                     <title>Member Profile - ${member.firstName} ${member.lastName}</title>
                     <style>
+                        @page {
+                            margin: 0.75in;
+                            size: letter;
+                        }
+                        
                         @media print {
-                            body { margin: 0; }
-                            .no-print { display: none; }
+                            body { 
+                                margin: 0; 
+                                font-size: 12pt;
+                                line-height: 1.4;
+                            }
+                            .no-print { display: none !important; }
+                            .page-break { page-break-before: always; }
+                            .avoid-break { page-break-inside: avoid; }
+                            h1, h2, h3, h4 { page-break-after: avoid; }
+                            table { page-break-inside: auto; }
+                            tr { page-break-inside: avoid; page-break-after: auto; }
+                            .header { border-bottom: 2px solid #333; }
                         }
+                        
+                        * {
+                            box-sizing: border-box;
+                        }
+                        
                         body {
-                            font-family: Arial, sans-serif;
-                            line-height: 1.6;
-                            color: #333;
-                            max-width: 800px;
-                            margin: 0 auto;
-                            padding: 20px;
+                            font-family: 'Times New Roman', serif;
+                            line-height: 1.5;
+                            color: #000;
+                            margin: 0;
+                            padding: 0;
+                            background: white;
                         }
+                        
+                        .container {
+                            max-width: 100%;
+                            margin: 0;
+                            padding: 0;
+                        }
+                        
                         .header {
                             text-align: center;
-                            margin-bottom: 30px;
-                            padding-bottom: 20px;
-                            border-bottom: 2px solid #667eea;
+                            margin-bottom: 25px;
+                            padding-bottom: 15px;
+                            border-bottom: 2px solid #333;
                         }
+                        
                         h1 {
-                            color: #667eea;
-                            margin: 10px 0;
+                            font-size: 24pt;
+                            font-weight: bold;
+                            margin: 0 0 10px 0;
+                            color: #000;
                         }
+                        
+                        h2 {
+                            font-size: 20pt;
+                            font-weight: bold;
+                            margin: 0 0 5px 0;
+                            color: #000;
+                        }
+                        
+                        h3 {
+                            font-size: 16pt;
+                            font-weight: bold;
+                            margin: 20px 0 10px 0;
+                            color: #000;
+                        }
+                        
+                        h4 {
+                            font-size: 14pt;
+                            font-weight: bold;
+                            margin: 15px 0 8px 0;
+                            color: #000;
+                        }
+                        
+                        p {
+                            margin: 8px 0;
+                            font-size: 12pt;
+                        }
+                        
                         .info-grid {
                             display: grid;
                             grid-template-columns: 1fr 1fr;
                             gap: 20px;
-                            margin-bottom: 30px;
+                            margin-bottom: 25px;
                         }
+                        
                         .info-box {
                             padding: 15px;
-                            background: #f8f9fa;
-                            border-radius: 8px;
+                            border: 1px solid #ccc;
+                            border-radius: 5px;
+                            background: #f9f9f9;
                         }
+                        
+                        .info-box h3 {
+                            margin-top: 0;
+                            margin-bottom: 12px;
+                            font-size: 14pt;
+                            border-bottom: 1px solid #ddd;
+                            padding-bottom: 5px;
+                        }
+                        
+                        .info-box p {
+                            margin: 6px 0;
+                            font-size: 11pt;
+                        }
+                        
                         .stats-grid {
                             display: grid;
                             grid-template-columns: repeat(4, 1fr);
                             gap: 15px;
-                            margin: 30px 0;
+                            margin: 20px 0;
+                            page-break-inside: avoid;
                         }
+                        
                         .stat-box {
                             text-align: center;
-                            padding: 15px;
-                            background: #f8f9fa;
-                            border-radius: 8px;
-                            border: 1px solid #e0e0e0;
+                            padding: 12px;
+                            border: 1px solid #ccc;
+                            border-radius: 5px;
+                            background: #f9f9f9;
                         }
+                        
                         .stat-value {
-                            font-size: 24px;
+                            font-size: 18pt;
                             font-weight: bold;
-                            color: #667eea;
                             margin: 5px 0;
+                            color: #000;
                         }
+                        
                         .stat-label {
-                            font-size: 12px;
-                            color: #666;
+                            font-size: 9pt;
+                            color: #333;
                             text-transform: uppercase;
+                            letter-spacing: 0.5px;
                         }
+                        
                         table {
                             width: 100%;
                             border-collapse: collapse;
-                            margin: 20px 0;
+                            margin: 15px 0;
+                            font-size: 10pt;
                         }
+                        
                         th, td {
-                            border: 1px solid #ddd;
-                            padding: 8px;
+                            border: 1px solid #000;
+                            padding: 6px 4px;
                             text-align: left;
+                            vertical-align: top;
                         }
+                        
                         th {
-                            background-color: #667eea;
-                            color: white;
+                            background-color: #e6e6e6;
+                            font-weight: bold;
+                            text-align: center;
+                            font-size: 10pt;
                         }
-                        .score-good { background-color: #d4edda; }
-                        .score-warning { background-color: #fff3cd; }
-                        .score-danger { background-color: #f8d7da; }
-                        .footer {
-                            margin-top: 50px;
+                        
+                        td {
+                            font-size: 9pt;
+                        }
+                        
+                        .score-good { 
+                            background-color: #e8f5e9 !important; 
+                            -webkit-print-color-adjust: exact;
+                            color-adjust: exact;
+                        }
+                        .score-warning { 
+                            background-color: #fff8e1 !important; 
+                            -webkit-print-color-adjust: exact;
+                            color-adjust: exact;
+                        }
+                        .score-danger { 
+                            background-color: #ffebee !important; 
+                            -webkit-print-color-adjust: exact;
+                            color-adjust: exact;
+                        }
+                        
+                        .progress-analysis {
+                            margin-top: 20px;
+                            padding: 15px;
+                            border: 1px solid #ccc;
+                            border-radius: 5px;
+                            background: #f9f9f9;
+                            page-break-inside: avoid;
+                        }
+                        
+                        .progress-analysis h4 {
+                            margin-top: 0;
+                            margin-bottom: 10px;
+                            border-bottom: 1px solid #ddd;
+                            padding-bottom: 5px;
+                        }
+                        
+                        .progress-analysis p {
+                            margin: 8px 0;
+                            font-size: 11pt;
+                        }
+                        
+                        .no-data {
                             text-align: center;
                             color: #666;
-                            font-size: 12px;
+                            font-style: italic;
+                            padding: 30px;
+                            border: 1px solid #ddd;
+                            border-radius: 5px;
+                            background: #f9f9f9;
+                            margin: 20px 0;
                         }
+                        
+                        .footer {
+                            margin-top: 30px;
+                            padding-top: 15px;
+                            border-top: 1px solid #ccc;
+                            text-align: center;
+                            color: #666;
+                            font-size: 9pt;
+                        }
+                        
                         .no-print {
                             margin: 20px;
                             text-align: center;
+                            padding: 15px;
+                            background: #f0f0f0;
+                            border: 1px solid #ccc;
+                            border-radius: 5px;
                         }
+                        
                         .btn {
                             padding: 10px 20px;
                             margin: 0 5px;
                             border: none;
                             border-radius: 5px;
                             cursor: pointer;
-                            font-size: 16px;
+                            font-size: 14px;
                         }
+                        
                         .btn-primary {
-                            background: #667eea;
+                            background: #007bff;
                             color: white;
                         }
+                        
                         .btn-secondary {
                             background: #6c757d;
                             color: white;
                         }
-                        .no-data {
-                            text-align: center;
-                            color: #666;
-                            font-style: italic;
-                            padding: 40px;
+                        
+                        /* Ensure proper spacing for different sections */
+                        .section {
+                            margin-bottom: 25px;
+                        }
+                        
+                        @media screen {
+                            body {
+                                padding: 20px;
+                                background: #f5f5f5;
+                            }
+                            .container {
+                                background: white;
+                                padding: 30px;
+                                border-radius: 8px;
+                                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                                max-width: 8.5in;
+                                margin: 0 auto;
+                            }
                         }
                     </style>
                 </head>
                 <body>
                     <div class="no-print">
-                        <button class="btn btn-primary" onclick="window.print()">Print/Save as PDF</button>
-                        <button class="btn btn-secondary" onclick="window.close()">Close</button>
-                        <p style="margin-top: 10px; color: #666;">
-                            To save as PDF: Click "Print" → Select "Save as PDF" as the printer
+                        <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
+                        <button class="btn btn-secondary" onclick="window.close()">✖️ Close</button>
+                        <p style="margin-top: 10px; color: #666; font-size: 12px;">
+                            <strong>Instructions:</strong> Click "Print" → Select "Save as PDF" as the destination → Click "Save"
                         </p>
                     </div>
                     
-                    <div class="header">
-                        <h1>Member Profile Report</h1>
-                        <h2>${member.firstName} ${member.lastName}</h2>
-                        <p>Generated on ${new Date().toLocaleDateString()}</p>
-                    </div>
-                    
-                    <div class="info-grid">
-                        <div class="info-box">
-                            <h3>Member Information</h3>
-                            <p><strong>Name:</strong> ${member.firstName} ${member.lastName}</p>
-                            <p><strong>Date of Birth:</strong> ${new Date(member.dob).toLocaleDateString()}</p>
-                            <p><strong>Member Since:</strong> ${new Date(member.createdAt).toLocaleDateString()}</p>
+                    <div class="container">
+                        <div class="header">
+                            <h1>MEMBER PROFILE REPORT</h1>
+                            <h2>${member.firstName} ${member.lastName}</h2>
+                            <p style="margin: 10px 0 0 0; font-size: 11pt;">Report Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
                         </div>
-                        <div class="info-box">
-                            <h3>Assessment Overview</h3>
-                            <p><strong>Total Evaluations:</strong> ${totalEvals}</p>
-                            <p><strong>Latest Evaluation:</strong> ${totalEvals > 0 ? new Date(memberEvals[0].date).toLocaleDateString() : 'None'}</p>
-                            <p><strong>Assessment Period:</strong> ${totalEvals > 1 ? 
-                                `${new Date(memberEvals[memberEvals.length - 1].date).toLocaleDateString()} - ${new Date(memberEvals[0].date).toLocaleDateString()}` 
-                                : (totalEvals === 1 ? new Date(memberEvals[0].date).toLocaleDateString() : 'No evaluations')}</p>
-                        </div>
-                    </div>
-                    
-                    ${totalEvals > 0 ? `
-                        <div class="stats-grid">
-                            <div class="stat-box">
-                                <div class="stat-value">${Math.round(latestScore)}</div>
-                                <div class="stat-label">Latest Score</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-value">${Math.round(avgScore)}</div>
-                                <div class="stat-label">Average Score</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-value">${Math.round(highestScore)}</div>
-                                <div class="stat-label">Highest Score</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-value">${Math.round(lowestScore)}</div>
-                                <div class="stat-label">Lowest Score</div>
-                            </div>
-                        </div>
-                    ` : ''}
-                    
-                    <h3>Evaluation History</h3>
-                    ${totalEvals > 0 ? `
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Overall Score</th>
-                                    <th>Trunk & Neck</th>
-                                    <th>Upper Left</th>
-                                    <th>Upper Right</th>
-                                    <th>Lower Left</th>
-                                    <th>Lower Right</th>
-                                    <th>Notes</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${memberEvals.map(evaluation => {
-                                    let scoreClass = 'score-warning';
-                                    if (evaluation.overallScore >= 80) scoreClass = 'score-good';
-                                    else if (evaluation.overallScore < 60) scoreClass = 'score-danger';
-                                    
-                                    return `
-                                        <tr>
-                                            <td>${new Date(evaluation.date).toLocaleDateString()}</td>
-                                            <td class="${scoreClass}"><strong>${Math.round(evaluation.overallScore)}</strong></td>
-                                            <td>${evaluation.groups['Trunk and Neck'].total.toFixed(1)}</td>
-                                            <td>${evaluation.groups['Upper Extremities - Left'].total.toFixed(1)}</td>
-                                            <td>${evaluation.groups['Upper Extremities - Right'].total.toFixed(1)}</td>
-                                            <td>${evaluation.groups['Lower Extremities - Left'].total.toFixed(1)}</td>
-                                            <td>${evaluation.groups['Lower Extremities - Right'].total.toFixed(1)}</td>
-                                            <td>${evaluation.notes ? evaluation.notes.substring(0, 50) + (evaluation.notes.length > 50 ? '...' : '') : 'No notes'}</td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                        </table>
                         
-                        ${totalEvals > 1 ? `
-                            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
-                                <h4>Progress Analysis</h4>
-                                <p><strong>Score Trend:</strong> ${latestScore > memberEvals[memberEvals.length - 1].overallScore ? 
-                                    `Improving (+${(latestScore - memberEvals[memberEvals.length - 1].overallScore).toFixed(1)} points from first to latest)` :
-                                    latestScore < memberEvals[memberEvals.length - 1].overallScore ?
-                                    `Declining (${(latestScore - memberEvals[memberEvals.length - 1].overallScore).toFixed(1)} points from first to latest)` :
-                                    'Stable (no change from first to latest)'}</p>
-                                <p><strong>Score Variance:</strong> ${(highestScore - lowestScore).toFixed(1)} point range</p>
-                                <p><strong>Assessment Frequency:</strong> ${Math.round(totalEvals / ((new Date(memberEvals[0].date) - new Date(memberEvals[memberEvals.length - 1].date)) / (1000 * 60 * 60 * 24 * 30)) * 10) / 10} evaluations per month</p>
+                        <div class="section">
+                            <div class="info-grid">
+                                <div class="info-box avoid-break">
+                                    <h3>Member Information</h3>
+                                    <p><strong>Full Name:</strong> ${member.firstName} ${member.lastName}</p>
+                                    <p><strong>Date of Birth:</strong> ${new Date(member.dob).toLocaleDateString()}</p>
+                                    <p><strong>Member Since:</strong> ${new Date(member.createdAt).toLocaleDateString()}</p>
+                                    <p><strong>Days as Member:</strong> ${Math.floor((new Date() - new Date(member.createdAt)) / (1000 * 60 * 60 * 24))} days</p>
+                                </div>
+                                <div class="info-box avoid-break">
+                                    <h3>Assessment Summary</h3>
+                                    <p><strong>Total Evaluations:</strong> ${totalEvals}</p>
+                                    <p><strong>Most Recent:</strong> ${totalEvals > 0 ? new Date(memberEvals[0].date).toLocaleDateString() : 'None'}</p>
+                                    <p><strong>First Evaluation:</strong> ${totalEvals > 0 ? new Date(memberEvals[memberEvals.length - 1].date).toLocaleDateString() : 'None'}</p>
+                                    <p><strong>Assessment Period:</strong> ${totalEvals > 1 ? 
+                                        `${Math.floor((new Date(memberEvals[0].date) - new Date(memberEvals[memberEvals.length - 1].date)) / (1000 * 60 * 60 * 24))} days` 
+                                        : 'N/A'}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${totalEvals > 0 ? `
+                            <div class="section">
+                                <h3>Performance Statistics</h3>
+                                <div class="stats-grid">
+                                    <div class="stat-box">
+                                        <div class="stat-value">${Math.round(latestScore)}</div>
+                                        <div class="stat-label">Current Score</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-value">${Math.round(avgScore)}</div>
+                                        <div class="stat-label">Average Score</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-value">${Math.round(highestScore)}</div>
+                                        <div class="stat-label">Best Score</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-value">${Math.round(lowestScore)}</div>
+                                        <div class="stat-label">Lowest Score</div>
+                                    </div>
+                                </div>
                             </div>
                         ` : ''}
-                    ` : `
-                        <div class="no-data">
-                            <p>No evaluations recorded for this member yet.</p>
-                            <p>Start by conducting an assessment to build their wellness profile.</p>
+                        
+                        <div class="section">
+                            <h3>Complete Evaluation History</h3>
+                            ${totalEvals > 0 ? `
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 12%;">Date</th>
+                                            <th style="width: 10%;">Overall</th>
+                                            <th style="width: 12%;">Trunk/Neck</th>
+                                            <th style="width: 12%;">Upper L</th>
+                                            <th style="width: 12%;">Upper R</th>
+                                            <th style="width: 12%;">Lower L</th>
+                                            <th style="width: 12%;">Lower R</th>
+                                            <th style="width: 18%;">Notes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${memberEvals.map(evaluation => {
+                                            let scoreClass = 'score-warning';
+                                            if (evaluation.overallScore >= 80) scoreClass = 'score-good';
+                                            else if (evaluation.overallScore < 60) scoreClass = 'score-danger';
+                                            
+                                            return `
+                                                <tr>
+                                                    <td>${new Date(evaluation.date).toLocaleDateString()}</td>
+                                                    <td class="${scoreClass}" style="text-align: center; font-weight: bold;">${Math.round(evaluation.overallScore)}</td>
+                                                    <td style="text-align: center;">${evaluation.groups['Trunk and Neck'].total.toFixed(1)}</td>
+                                                    <td style="text-align: center;">${evaluation.groups['Upper Extremities - Left'].total.toFixed(1)}</td>
+                                                    <td style="text-align: center;">${evaluation.groups['Upper Extremities - Right'].total.toFixed(1)}</td>
+                                                    <td style="text-align: center;">${evaluation.groups['Lower Extremities - Left'].total.toFixed(1)}</td>
+                                                    <td style="text-align: center;">${evaluation.groups['Lower Extremities - Right'].total.toFixed(1)}</td>
+                                                    <td style="font-size: 8pt;">${evaluation.notes ? (evaluation.notes.length > 60 ? evaluation.notes.substring(0, 60) + '...' : evaluation.notes) : 'No notes'}</td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
+                                    </tbody>
+                                </table>
+                                
+                                ${totalEvals > 1 ? `
+                                    <div class="progress-analysis avoid-break">
+                                        <h4>Progress Analysis</h4>
+                                        <p><strong>Overall Trend:</strong> ${latestScore > memberEvals[memberEvals.length - 1].overallScore ? 
+                                            `Improving trend with ${(latestScore - memberEvals[memberEvals.length - 1].overallScore).toFixed(1)} point gain from first to most recent evaluation` :
+                                            latestScore < memberEvals[memberEvals.length - 1].overallScore ?
+                                            `Declining trend with ${Math.abs(latestScore - memberEvals[memberEvals.length - 1].overallScore).toFixed(1)} point decrease from first to most recent evaluation` :
+                                            'Stable performance with no significant change from first to most recent evaluation'}</p>
+                                        <p><strong>Score Variability:</strong> ${(highestScore - lowestScore).toFixed(1)} point range between highest and lowest scores</p>
+                                        <p><strong>Assessment Frequency:</strong> ${totalEvals > 1 ? 
+                                            `Average of ${(totalEvals / ((new Date(memberEvals[0].date) - new Date(memberEvals[memberEvals.length - 1].date)) / (1000 * 60 * 60 * 24 * 30.44))).toFixed(1)} evaluations per month` :
+                                            'Insufficient data for frequency calculation'}</p>
+                                        <p><strong>Performance Rating:</strong> ${avgScore >= 80 ? 'Excellent overall performance' : avgScore >= 70 ? 'Good overall performance' : avgScore >= 60 ? 'Fair overall performance' : 'Needs attention and focused improvement'}</p>
+                                    </div>
+                                ` : ''}
+                            ` : `
+                                <div class="no-data avoid-break">
+                                    <p><strong>No Evaluations Available</strong></p>
+                                    <p>This member has not completed any wellness assessments yet.</p>
+                                    <p>Schedule an initial evaluation to begin tracking their wellness profile.</p>
+                                </div>
+                            `}
                         </div>
-                    `}
-                    
-                    <div class="footer">
-                        <p>Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
-                        <p>Athletic Wellness Assessment System</p>
+                        
+                        <div class="footer">
+                            <p>Athletic Wellness Assessment System | Professional Member Report</p>
+                            <p>This report contains confidential health information and should be handled accordingly.</p>
+                        </div>
                     </div>
                 </body>
                 </html>
