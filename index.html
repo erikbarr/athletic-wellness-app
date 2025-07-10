@@ -569,19 +569,9 @@
                             <input type="text" class="form-control" id="last-name" required>
                         </div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="dob">Date of Birth</label>
-                            <input type="date" class="form-control" id="dob" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="sport">Sport</label>
-                            <input type="text" class="form-control" id="sport" placeholder="e.g., Basketball, Soccer">
-                        </div>
-                    </div>
                     <div class="form-group">
-                        <label for="notes">Notes</label>
-                        <textarea class="form-control" id="notes" rows="3"></textarea>
+                        <label for="dob">Date of Birth</label>
+                        <input type="date" class="form-control" id="dob" required>
                     </div>
                     <div class="action-buttons">
                         <button type="button" class="btn btn-primary" onclick="addMember()">Add Member</button>
@@ -621,16 +611,6 @@
                             <p id="view-dob" style="padding: 10px 15px; background: #f8f9fa; border-radius: 8px; margin: 5px 0;"></p>
                         </div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label style="font-weight: 600; color: #555;">Sport</label>
-                            <p id="view-sport" style="padding: 10px 15px; background: #f8f9fa; border-radius: 8px; margin: 5px 0;"></p>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label style="font-weight: 600; color: #555;">Notes</label>
-                        <p id="view-notes" style="padding: 10px 15px; background: #f8f9fa; border-radius: 8px; margin: 5px 0; min-height: 60px; white-space: pre-wrap;"></p>
-                    </div>
                     <div class="action-buttons">
                         <button type="button" class="btn btn-primary" onclick="enableEditMode()">Edit Profile</button>
                         <button type="button" class="btn" onclick="deleteMember()" style="background: #dc3545; border-color: #dc3545; color: white;">Delete Member</button>
@@ -649,19 +629,9 @@
                             <input type="text" class="form-control" id="edit-last-name">
                         </div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="edit-dob">Date of Birth</label>
-                            <input type="date" class="form-control" id="edit-dob">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-sport">Sport</label>
-                            <input type="text" class="form-control" id="edit-sport">
-                        </div>
-                    </div>
                     <div class="form-group">
-                        <label for="edit-notes">Notes</label>
-                        <textarea class="form-control" id="edit-notes" rows="3"></textarea>
+                        <label for="edit-dob">Date of Birth</label>
+                        <input type="date" class="form-control" id="edit-dob">
                     </div>
                     <div class="action-buttons">
                         <button type="button" class="btn btn-primary" onclick="saveMemberEdits()">Save Changes</button>
@@ -1057,8 +1027,6 @@
                 const firstName = document.getElementById('first-name').value;
                 const lastName = document.getElementById('last-name').value;
                 const dob = document.getElementById('dob').value;
-                const sport = document.getElementById('sport').value;
-                const notes = document.getElementById('notes').value;
                 
                 if (!firstName || !lastName || !dob) {
                     alert('Please fill in all required fields');
@@ -1070,8 +1038,6 @@
                     firstName: firstName,
                     lastName: lastName,
                     dob: dob,
-                    sport: sport || '',
-                    notes: notes || '',
                     createdAt: new Date().toISOString()
                 };
                 
@@ -1084,8 +1050,6 @@
                 document.getElementById('first-name').value = '';
                 document.getElementById('last-name').value = '';
                 document.getElementById('dob').value = '';
-                document.getElementById('sport').value = '';
-                document.getElementById('notes').value = '';
                 
                 updateMemberList();
                 updateDashboard();
@@ -1125,7 +1089,6 @@
                 <div class="eval-item" onclick="viewMemberProfile('${member.id}')" style="cursor: pointer;">
                     <div>
                         <strong>${member.firstName} ${member.lastName}</strong>
-                        <div style="color: #666; font-size: 14px;">${member.sport || 'No sport specified'}</div>
                     </div>
                     <div style="color: #999; font-size: 14px;">
                         ${new Date(member.dob).toLocaleDateString()}
@@ -1166,8 +1129,6 @@
             // Populate view mode
             document.getElementById('view-name').textContent = `${member.firstName} ${member.lastName}`;
             document.getElementById('view-dob').textContent = new Date(member.dob).toLocaleDateString();
-            document.getElementById('view-sport').textContent = member.sport || 'Not specified';
-            document.getElementById('view-notes').textContent = member.notes || 'No notes';
             
             // Load evaluation history and draw trend
             loadMemberEvaluationHistory(memberId);
@@ -1186,8 +1147,6 @@
             document.getElementById('edit-first-name').value = member.firstName;
             document.getElementById('edit-last-name').value = member.lastName;
             document.getElementById('edit-dob').value = member.dob;
-            document.getElementById('edit-sport').value = member.sport || '';
-            document.getElementById('edit-notes').value = member.notes || '';
         }
 
         function cancelEdit() {
@@ -1207,9 +1166,7 @@
                 ...members[memberIndex],
                 firstName: document.getElementById('edit-first-name').value,
                 lastName: document.getElementById('edit-last-name').value,
-                dob: document.getElementById('edit-dob').value,
-                sport: document.getElementById('edit-sport').value,
-                notes: document.getElementById('edit-notes').value
+                dob: document.getElementById('edit-dob').value
             };
             
             members[memberIndex] = updatedMember;
@@ -1222,8 +1179,6 @@
             // Update view mode with new data
             document.getElementById('view-name').textContent = `${updatedMember.firstName} ${updatedMember.lastName}`;
             document.getElementById('view-dob').textContent = new Date(updatedMember.dob).toLocaleDateString();
-            document.getElementById('view-sport').textContent = updatedMember.sport || 'Not specified';
-            document.getElementById('view-notes').textContent = updatedMember.notes || 'No notes';
             
             // Switch back to view mode
             document.getElementById('member-edit-mode').style.display = 'none';
@@ -1973,7 +1928,6 @@
                             <h3>Member Information</h3>
                             <p><strong>Name:</strong> ${member.firstName} ${member.lastName}</p>
                             <p><strong>DOB:</strong> ${new Date(member.dob).toLocaleDateString()}</p>
-                            <p><strong>Sport:</strong> ${member.sport || 'Not specified'}</p>
                         </div>
                         <div class="info-box">
                             <h3>Evaluation Summary</h3>
