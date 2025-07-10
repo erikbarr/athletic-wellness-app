@@ -32,21 +32,26 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid API key format' });
     }
     
-    // UPDATED PROMPT - Cleaner, no extra labels or notes
-    const prompt = `Please revise this voice transcript to improve clarity and readability, while keeping the same meaning and information.
+    // UPDATED PROMPT - Physical therapy style with two sections
+    const prompt = `Please convert this voice transcript into a professional physical therapy encounter note with two clear sections. Write in simple, clear language at a 6th grade reading level.
 
-Original: "${transcript}"
+Original transcript: "${transcript}"
 
 Instructions:
-- Fix any unclear or incomplete sentences
-- Write at an 8th grade reading level
-- Keep the same terminology and information that was spoken
-- Make it flow better and be easier to read
-- Don't add new medical terms or change the style
-- Just clean up the language to make it clearer
-- Return only the revised text, nothing else
+- Create exactly two sections as shown below
+- Write in paragraph format (not bullet points)
+- Use simple words and short sentences
+- Sound professional like a physical therapy note
+- Include specific details mentioned in the transcript
+- If no treatment plan is discussed, write "No treatment plan discussed during this session."
 
-Revised version:`;
+Format your response exactly like this:
+
+**EVALUATION SUMMARY:**
+[Write a detailed paragraph describing what was found during the evaluation. Include any pain, movement problems, strength issues, or other findings that were noted. Mention specific body parts and describe what the patient reported or what was observed.]
+
+**TREATMENT PLAN:**
+[Write a detailed paragraph about any treatment ideas, exercises, recommendations, or next steps that were discussed. Include any advice given to the patient, planned treatments, or follow-up instructions. If no treatment was discussed, state that clearly.]`;
 
     // Try different models in order of preference
     const models = [
@@ -70,7 +75,7 @@ Revised version:`;
           },
           body: JSON.stringify({
             model: model,
-            max_tokens: 200,
+            max_tokens: 500, // Increased for more detailed content
             messages: [{
               role: 'user',
               content: prompt
@@ -82,7 +87,7 @@ Revised version:`;
           const data = await response.json();
           let summary = data.content[0].text.trim();
           
-          // Clean up the response - remove unwanted prefixes and suffixes
+          // Clean up the response and ensure proper formatting
           summary = cleanupSummary(summary);
           
           console.log(`Successfully generated summary using ${model}`);
@@ -141,54 +146,60 @@ Revised version:`;
   }
 }
 
-// Clean up AI response to remove unwanted text
+// Clean up AI response to ensure proper formatting
 function cleanupSummary(text) {
-  let cleaned = text;
+  let cleaned = text.trim();
   
-  // Remove common prefixes that might appear
-  const prefixesToRemove = [
-    'REVISED NOTE:',
-    'Revised Note:',
-    'revised note:',
-    'REVISED:',
-    'Revised:',
-    'revised:',
-    'NOTE:',
-    'Note:',
-    'note:',
-    'SUMMARY:',
-    'Summary:',
-    'summary:'
+  // Remove any unwanted prefixes that might appear before the structured content
+  const unwantedPrefixes = [
+    'Here is the formatted response:',
+    'Here\'s the formatted response:',
+    'Response:',
+    'RESPONSE:',
+    'Output:',
+    'OUTPUT:'
   ];
   
-  prefixesToRemove.forEach(prefix => {
-    if (cleaned.startsWith(prefix)) {
+  unwantedPrefixes.forEach(prefix => {
+    if (cleaned.toLowerCase().startsWith(prefix.toLowerCase())) {
       cleaned = cleaned.substring(prefix.length).trim();
     }
   });
   
-  // Remove common suffixes or notes that might be added
-  const suffixesToRemove = [
-    'Note:',
-    'NOTE:',
-    'Additional notes:',
-    'Additional Notes:',
-    'ADDITIONAL NOTES:'
-  ];
-  
-  suffixesToRemove.forEach(suffix => {
-    const index = cleaned.lastIndexOf(suffix);
-    if (index > -1 && index > cleaned.length * 0.7) { // Only remove if it's near the end
-      cleaned = cleaned.substring(0, index).trim();
+  // Ensure the two main sections are properly formatted
+  if (!cleaned.includes('**EVALUATION SUMMARY:**')) {
+    // If the format is wrong, try to fix basic structure
+    if (cleaned.toLowerCase().includes('evaluation') && cleaned.toLowerCase().includes('treatment')) {
+      // Attempt basic formatting if sections exist but are not properly marked
+      cleaned = cleaned.replace(/evaluation summary:?/gi, '**EVALUATION SUMMARY:**');
+      cleaned = cleaned.replace(/treatment plan:?/gi, '\n\n**TREATMENT PLAN:**');
     }
-  });
+  }
+  
+  // Clean up any double asterisks or formatting issues
+  cleaned = cleaned.replace(/\*\*\*+/g, '**');
+  
+  // Ensure proper spacing between sections
+  cleaned = cleaned.replace(/\*\*TREATMENT PLAN:\*\*/g, '\n\n**TREATMENT PLAN:**');
   
   // Remove any trailing periods that might be doubled up
-  cleaned = cleaned.replace(/\.+$/, '.');
+  cleaned = cleaned.replace(/\.+$/g, '.');
   
-  // Ensure it doesn't end with incomplete sentences due to cleanup
-  if (cleaned.endsWith(',') || cleaned.endsWith(';')) {
-    cleaned = cleaned.slice(0, -1) + '.';
+  // Ensure sections end with proper punctuation
+  const sections = cleaned.split('**TREATMENT PLAN:**');
+  if (sections.length === 2) {
+    let evalSection = sections[0].replace('**EVALUATION SUMMARY:**', '').trim();
+    let treatmentSection = sections[1].trim();
+    
+    // Ensure each section ends with a period
+    if (evalSection && !evalSection.endsWith('.') && !evalSection.endsWith('!') && !evalSection.endsWith('?')) {
+      evalSection += '.';
+    }
+    if (treatmentSection && !treatmentSection.endsWith('.') && !treatmentSection.endsWith('!') && !treatmentSection.endsWith('?')) {
+      treatmentSection += '.';
+    }
+    
+    cleaned = '**EVALUATION SUMMARY:**\n' + evalSection + '\n\n**TREATMENT PLAN:**\n' + treatmentSection;
   }
   
   return cleaned.trim();
