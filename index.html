@@ -9,7 +9,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-        }
+
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -739,7 +739,7 @@
                         <div style="color: #666; margin-top: 10px;">Wellness Score</div>
                     </div>
                     <div class="group-breakdown">
-                        <h3>Group Summary</h3>
+                        <h3>Segment Summary</h3>
                         <div id="group-breakdown-list">
                             <!-- Breakdown items will be inserted here -->
                         </div>
@@ -896,27 +896,28 @@
         let claudeApiKey = '';
         let useClaudeAI = false;
 
-        // Body segments configuration - CORRECT NEW LABELS
-        const groups = [
-            'Trunk and Neck',
-            'Upper Extremities - Left',
-            'Upper Extremities - Right',
-            'Lower Extremities - Left',
-            'Lower Extremities - Right'
+        // New simplified assessment segments
+        const assessmentSegments = [
+            'Spine',
+            'Upper Extremity - Right',
+            'Upper Extremity - Left', 
+            'Lower Extremity - Right',
+            'Lower Extremity - Left',
+            'Posture',
+            'Balance',
+            'Gait'
         ];
 
-        const segments = {
-            'Trunk and Neck': ['Cervical', 'Thoracic', 'Lumbar', 'Pelvis', 'Soft Tissue'],
-            'Upper Extremities - Left': ['Shoulder', 'Elbow', 'Wrist', 'Hand', 'Soft Tissue'],
-            'Upper Extremities - Right': ['Shoulder', 'Elbow', 'Wrist', 'Hand', 'Soft Tissue'],
-            'Lower Extremities - Left': ['Hip', 'Knee', 'Ankle', 'Foot', 'Soft Tissue'],
-            'Lower Extremities - Right': ['Hip', 'Knee', 'Ankle', 'Foot', 'Soft Tissue']
+        const functionLevels = {
+            'Full Function': 12.5,
+            'Minor Limitation': 9.5,
+            'Modified Function': 6.5,
+            'Restricted Function': 0
         };
 
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('App initialized with groups:', groups);
-            console.log('Segments:', segments);
+            console.log('App initialized with assessment segments:', assessmentSegments);
             loadData();
             loadSettings(); // Load Claude API settings
             updateDashboard();
@@ -990,28 +991,92 @@
         // Data persistence - Restore localStorage for real deployment
         function loadData() {
             try {
+                // In the artifact environment, we'll start with demo data
+                // In real deployment, you would uncomment localStorage lines below
+                /*
                 const savedMembers = localStorage.getItem('athletic-members-v2');
                 const savedEvals = localStorage.getItem('athletic-evaluations-v2');
                 
                 if (savedMembers) members = JSON.parse(savedMembers);
                 if (savedEvals) evaluations = JSON.parse(savedEvals);
+                */
                 
-                // Note: Demo data auto-loading removed to prevent persistence after clearing data
-                // Users start with empty app and add their own members
+                // Load demo data if no saved data exists
+                if (members.length === 0) {
+                    loadDemoData();
+                }
                 
             } catch (error) {
                 console.error('Error loading data:', error);
-                // Fallback to empty arrays if localStorage fails
-                members = [];
-                evaluations = [];
+                // Fallback to demo data if localStorage fails
+                loadDemoData();
             }
+        }
+
+        function loadDemoData() {
+            // Demo members
+            members = [
+                {
+                    id: 'demo-1',
+                    firstName: 'John',
+                    lastName: 'Smith',
+                    dob: '1990-05-15',
+                    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+                },
+                {
+                    id: 'demo-2',
+                    firstName: 'Sarah',
+                    lastName: 'Johnson',
+                    dob: '1988-08-22',
+                    createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
+                }
+            ];
+
+            // Demo evaluations with new structure
+            evaluations = [
+                {
+                    id: 'eval-1',
+                    memberId: 'demo-1',
+                    date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+                    overallScore: 87.5,
+                    notes: 'Good overall performance. Some minor balance concerns noted.',
+                    segments: {
+                        'Spine': { functionLevel: 'Full Function', score: 12.5 },
+                        'Upper Extremity - Right': { functionLevel: 'Full Function', score: 12.5 },
+                        'Upper Extremity - Left': { functionLevel: 'Minor Limitation', score: 9.5 },
+                        'Lower Extremity - Right': { functionLevel: 'Full Function', score: 12.5 },
+                        'Lower Extremity - Left': { functionLevel: 'Full Function', score: 12.5 },
+                        'Posture': { functionLevel: 'Full Function', score: 12.5 },
+                        'Balance': { functionLevel: 'Minor Limitation', score: 9.5 },
+                        'Gait': { functionLevel: 'Full Function', score: 12.5 }
+                    }
+                },
+                {
+                    id: 'eval-2',
+                    memberId: 'demo-2',
+                    date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+                    overallScore: 74.5,
+                    notes: 'Progress noted since last session. Continue current program.',
+                    segments: {
+                        'Spine': { functionLevel: 'Minor Limitation', score: 9.5 },
+                        'Upper Extremity - Right': { functionLevel: 'Full Function', score: 12.5 },
+                        'Upper Extremity - Left': { functionLevel: 'Full Function', score: 12.5 },
+                        'Lower Extremity - Right': { functionLevel: 'Modified Function', score: 6.5 },
+                        'Lower Extremity - Left': { functionLevel: 'Minor Limitation', score: 9.5 },
+                        'Posture': { functionLevel: 'Minor Limitation', score: 9.5 },
+                        'Balance': { functionLevel: 'Modified Function', score: 6.5 },
+                        'Gait': { functionLevel: 'Minor Limitation', score: 9.5 }
+                    }
+                }
+            ];
         }
 
         function saveData() {
             try {
-                localStorage.setItem('athletic-members-v2', JSON.stringify(members));
-                localStorage.setItem('athletic-evaluations-v2', JSON.stringify(evaluations));
-                console.log('Data saved to localStorage');
+                // In real deployment, uncomment these lines:
+                // localStorage.setItem('athletic-members-v2', JSON.stringify(members));
+                // localStorage.setItem('athletic-evaluations-v2', JSON.stringify(evaluations));
+                console.log('Data saved successfully');
             } catch (error) {
                 console.error('Error saving data:', error);
                 // Could implement alternative storage here if needed
@@ -1112,6 +1177,406 @@
                 ).join('');
         }
 
+        // Evaluation management
+        function selectMemberForEval() {
+            const select = document.getElementById('eval-member-select');
+            const memberId = select.value;
+            
+            if (!memberId) return;
+            
+            const member = members.find(m => m.id === memberId);
+            document.getElementById('eval-member-name').textContent = 
+                `${member.firstName} ${member.lastName} - ${new Date().toLocaleDateString()}`;
+            
+            initializeEvaluation(memberId);
+            document.getElementById('evaluation-form').style.display = 'block';
+            document.getElementById('eval-notes-section').style.display = 'block';
+            document.getElementById('eval-actions').style.display = 'flex';
+        }
+
+        function initializeEvaluation(memberId) {
+            console.log('Initializing evaluation with assessment segments:', assessmentSegments);
+            
+            currentEvaluation = {
+                id: generateId(),
+                memberId: memberId,
+                date: new Date().toISOString(),
+                segments: {}
+            };
+            
+            const formEl = document.getElementById('evaluation-form');
+            formEl.innerHTML = '';
+            
+            // Initialize each segment with "Full Function" as default
+            assessmentSegments.forEach(segmentName => {
+                currentEvaluation.segments[segmentName] = {
+                    functionLevel: 'Full Function',
+                    score: 12.5
+                };
+            });
+            
+            // Create the evaluation form
+            const assessmentEl = createAssessmentForm();
+            formEl.appendChild(assessmentEl);
+            
+            updateOverallScore();
+        }
+
+        function createAssessmentForm() {
+            const div = document.createElement('div');
+            div.className = 'assessment-section';
+            div.innerHTML = `
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 20px; color: #667eea;">Functional Assessment</h3>
+                    <table class="segment-table" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%;">Assessment Area</th>
+                                <th style="width: 60%;">Function Level</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${assessmentSegments.map(segmentName => `
+                                <tr>
+                                    <td style="font-weight: 600; padding: 15px 10px;">${segmentName}</td>
+                                    <td style="padding: 10px;">
+                                        <select class="form-control" id="segment-${segmentName.replace(/\s/g, '-').replace(/[^a-zA-Z0-9-]/g, '')}" 
+                                                onchange="updateSegmentFunction('${segmentName}', this.value)"
+                                                style="width: 100%; padding: 8px 12px;">
+                                            ${Object.keys(functionLevels).map(level => `
+                                                <option value="${level}" ${level === 'Full Function' ? 'selected' : ''}>${level}</option>
+                                            `).join('')}
+                                        </select>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            return div;
+        }
+
+        function updateSegmentFunction(segmentName, functionLevel) {
+            if (!currentEvaluation || !currentEvaluation.segments[segmentName]) return;
+            
+            currentEvaluation.segments[segmentName].functionLevel = functionLevel;
+            currentEvaluation.segments[segmentName].score = functionLevels[functionLevel];
+            
+            updateOverallScore();
+        }
+
+        function updateOverallScore() {
+            if (!currentEvaluation) return;
+            
+            let overallScore = 0;
+            
+            Object.values(currentEvaluation.segments).forEach(segment => {
+                overallScore += segment.score;
+            });
+            
+            currentEvaluation.overallScore = overallScore;
+            document.getElementById('overall-score').textContent = Math.round(overallScore);
+        }
+
+        function saveEvaluation() {
+            if (!currentEvaluation) return;
+            
+            // Add notes to the evaluation
+            const notesEl = document.getElementById('eval-notes');
+            currentEvaluation.notes = notesEl ? notesEl.value || '' : '';
+            
+            // Add new evaluation
+            evaluations.push(currentEvaluation);
+            alert('Evaluation saved successfully!');
+            
+            saveData();
+            
+            // Update dashboard to reflect changes
+            updateDashboard();
+            
+            // Show results
+            showResults(currentEvaluation);
+            showTab('results');
+        }
+
+        function resetEvaluation() {
+            if (confirm('Are you sure you want to reset this evaluation?')) {
+                if (currentEvaluation) {
+                    initializeEvaluation(currentEvaluation.memberId);
+                }
+            }
+        }
+
+        function startNewEvaluation() {
+            editingExisting = false;
+            showTab('evaluation');
+            document.getElementById('eval-member-select').value = '';
+            document.getElementById('evaluation-form').style.display = 'none';
+            document.getElementById('eval-notes-section').style.display = 'none';
+            document.getElementById('eval-actions').style.display = 'none';
+            document.getElementById('eval-member-name').textContent = 'Select a member to begin';
+            document.getElementById('overall-score').textContent = '0';
+            const notesEl = document.getElementById('eval-notes');
+            if (notesEl) notesEl.value = '';
+        }
+
+        function showResults(evaluation) {
+            const member = members.find(m => m.id === evaluation.memberId);
+            
+            viewingEvaluationId = evaluation.id;
+            
+            document.getElementById('results-empty').style.display = 'none';
+            document.getElementById('results-view').style.display = 'block';
+            
+            document.getElementById('results-title').textContent = 
+                `Evaluation Results - ${member.firstName} ${member.lastName} - ${new Date(evaluation.date).toLocaleDateString()}`;
+            document.getElementById('results-score').textContent = Math.round(evaluation.overallScore);
+            
+            // Display notes
+            const notesEl = document.getElementById('results-notes');
+            if (evaluation.notes && evaluation.notes.trim()) {
+                notesEl.textContent = evaluation.notes;
+            } else {
+                notesEl.innerHTML = '<em style="color: #999;">No notes recorded for this evaluation.</em>';
+            }
+            
+            // Update segment breakdown
+            const breakdownEl = document.getElementById('group-breakdown-list');
+            breakdownEl.innerHTML = '';
+            
+            assessmentSegments.forEach(segmentName => {
+                const segment = evaluation.segments[segmentName];
+                const percentage = (segment.score / 12.5) * 100;
+                
+                const item = document.createElement('div');
+                item.className = 'breakdown-item';
+                item.innerHTML = `
+                    <div style="min-width: 180px;">${segmentName}</div>
+                    <div class="breakdown-bar">
+                        <div class="breakdown-fill" style="width: ${percentage}%"></div>
+                    </div>
+                    <div style="min-width: 120px; text-align: right; font-weight: 600;">
+                        ${segment.functionLevel}
+                    </div>
+                `;
+                breakdownEl.appendChild(item);
+            });
+        }
+
+        function viewEvaluation(evalId) {
+            const evaluation = evaluations.find(e => e.id === evalId);
+            if (evaluation) {
+                showResults(evaluation);
+                showTab('results');
+            }
+        }
+
+        function editCurrentEvaluation() {
+            if (!viewingEvaluationId) return;
+            
+            const evaluation = evaluations.find(e => e.id === viewingEvaluationId);
+            if (!evaluation) return;
+            
+            editingExisting = true;
+            currentEvaluation = JSON.parse(JSON.stringify(evaluation)); // Deep clone
+            
+            showTab('evaluation');
+            
+            // Set member selection
+            const member = members.find(m => m.id === evaluation.memberId);
+            document.getElementById('eval-member-select').value = evaluation.memberId;
+            document.getElementById('eval-member-name').textContent = 
+                `${member.firstName} ${member.lastName} - ${new Date(evaluation.date).toLocaleDateString()} (Editing)`;
+            
+            // Show forms
+            document.getElementById('evaluation-form').style.display = 'block';
+            document.getElementById('eval-notes-section').style.display = 'block';
+            document.getElementById('eval-actions').style.display = 'flex';
+            
+            // Load existing data into form
+            loadEvaluationIntoForm(evaluation);
+            
+            // Update overall score
+            updateOverallScore();
+        }
+
+        function loadEvaluationIntoForm(evaluation) {
+            const formEl = document.getElementById('evaluation-form');
+            formEl.innerHTML = '';
+            
+            // Load notes
+            const notesEl = document.getElementById('eval-notes');
+            if (notesEl) {
+                notesEl.value = evaluation.notes || '';
+            }
+            
+            // Create the assessment form with existing data
+            const assessmentEl = createAssessmentFormWithData(evaluation);
+            formEl.appendChild(assessmentEl);
+        }
+
+        function createAssessmentFormWithData(evaluation) {
+            const div = document.createElement('div');
+            div.className = 'assessment-section';
+            div.innerHTML = `
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 20px; color: #667eea;">Functional Assessment</h3>
+                    <table class="segment-table" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%;">Assessment Area</th>
+                                <th style="width: 60%;">Function Level</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${assessmentSegments.map(segmentName => {
+                                const segmentData = evaluation.segments[segmentName];
+                                const currentLevel = segmentData ? segmentData.functionLevel : 'Full Function';
+                                return `
+                                    <tr>
+                                        <td style="font-weight: 600; padding: 15px 10px;">${segmentName}</td>
+                                        <td style="padding: 10px;">
+                                            <select class="form-control" id="segment-${segmentName.replace(/\s/g, '-').replace(/[^a-zA-Z0-9-]/g, '')}" 
+                                                    onchange="updateSegmentFunction('${segmentName}', this.value)"
+                                                    style="width: 100%; padding: 8px 12px;">
+                                                ${Object.keys(functionLevels).map(level => `
+                                                    <option value="${level}" ${level === currentLevel ? 'selected' : ''}>${level}</option>
+                                                `).join('')}
+                                            </select>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            return div;
+        }
+
+        function saveEvaluation() {
+            if (!currentEvaluation) return;
+            
+            // Add notes to the evaluation
+            const notesEl = document.getElementById('eval-notes');
+            currentEvaluation.notes = notesEl ? notesEl.value || '' : '';
+            
+            if (editingExisting) {
+                // Update existing evaluation
+                const index = evaluations.findIndex(e => e.id === currentEvaluation.id);
+                if (index !== -1) {
+                    evaluations[index] = currentEvaluation;
+                    alert('Evaluation updated successfully!');
+                }
+                editingExisting = false;
+            } else {
+                // Add new evaluation
+                evaluations.push(currentEvaluation);
+                alert('Evaluation saved successfully!');
+            }
+            
+            saveData();
+            
+            // Update dashboard to reflect changes
+            updateDashboard();
+            
+            // Show results
+            showResults(currentEvaluation);
+            showTab('results');
+        }
+
+        function resetEvaluation() {
+            if (confirm('Are you sure you want to reset this evaluation?')) {
+                if (editingExisting && currentEvaluation) {
+                    // If editing, reload the original data
+                    const original = evaluations.find(e => e.id === currentEvaluation.id);
+                    if (original) {
+                        currentEvaluation = JSON.parse(JSON.stringify(original));
+                        loadEvaluationIntoForm(currentEvaluation);
+                        updateOverallScore();
+                    }
+                } else {
+                    // If new evaluation, reset to defaults
+                    if (currentEvaluation) {
+                        initializeEvaluation(currentEvaluation.memberId);
+                    }
+                }
+            }
+        }
+
+        // Dashboard updates
+        function updateDashboard() {
+            // Update member count
+            document.getElementById('total-members').textContent = members.length;
+            
+            // Calculate weekly evaluations
+            const now = new Date();
+            const weekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+            
+            const weeklyEvals = evaluations.filter(e => {
+                const evalDate = new Date(e.date);
+                return evalDate >= weekAgo && evalDate <= now;
+            }).length;
+            
+            document.getElementById('weekly-evals').textContent = weeklyEvals;
+            
+            console.log('Dashboard updated - Total evals:', evaluations.length, 'Weekly:', weeklyEvals);
+            
+            updateRecentEvaluations();
+            updateMemberList();
+            updateMemberSelect();
+        }
+
+        function updateRecentEvaluations() {
+            const recentEl = document.getElementById('recent-evals');
+            
+            if (evaluations.length === 0) {
+                recentEl.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No evaluations yet. Start by adding a member!</p>';
+                return;
+            }
+            
+            // Sort by date and take last 10
+            const recent = evaluations
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .slice(0, 10);
+            
+            recentEl.innerHTML = recent.map(eval => {
+                const member = members.find(m => m.id === eval.memberId);
+                
+                let scoreClass = 'score-warning';
+                if (eval.overallScore >= 80) scoreClass = 'score-good';
+                else if (eval.overallScore < 60) scoreClass = 'score-danger';
+                
+                return `
+                    <div class="eval-item" onclick="viewEvaluation('${eval.id}')">
+                        <div>
+                            <strong>${member ? `${member.firstName} ${member.lastName}` : 'Unknown Member'}</strong>
+                            <div style="color: #666; font-size: 14px;">
+                                ${new Date(eval.date).toLocaleDateString()}
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="score-badge ${scoreClass}">
+                                ${Math.round(eval.overallScore)}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Utility functions
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            updateDashboard();
+        });
+
         // Member Profile Functions
         function viewMemberProfile(memberId) {
             currentMemberId = memberId;
@@ -1134,122 +1599,6 @@
             // Load evaluation history and draw trend
             loadMemberEvaluationHistory(memberId);
             drawTrendChart(memberId);
-        }
-
-        function enableEditMode() {
-            const member = members.find(m => m.id === currentMemberId);
-            if (!member) return;
-            
-            // Hide view mode, show edit mode
-            document.getElementById('member-view-mode').style.display = 'none';
-            document.getElementById('member-edit-mode').style.display = 'block';
-            
-            // Populate edit form
-            document.getElementById('edit-first-name').value = member.firstName;
-            document.getElementById('edit-last-name').value = member.lastName;
-            document.getElementById('edit-dob').value = member.dob;
-        }
-
-        function cancelEdit() {
-            // Hide edit mode, show view mode
-            document.getElementById('member-edit-mode').style.display = 'none';
-            document.getElementById('member-view-mode').style.display = 'block';
-        }
-
-        function saveMemberEdits() {
-            if (!currentMemberId) return;
-            
-            const memberIndex = members.findIndex(m => m.id === currentMemberId);
-            if (memberIndex === -1) return;
-            
-            // Update member data
-            const updatedMember = {
-                ...members[memberIndex],
-                firstName: document.getElementById('edit-first-name').value,
-                lastName: document.getElementById('edit-last-name').value,
-                dob: document.getElementById('edit-dob').value
-            };
-            
-            members[memberIndex] = updatedMember;
-            
-            saveData();
-            updateMemberList();
-            updateMemberSelect();
-            updateDashboard();
-            
-            // Update view mode with new data
-            document.getElementById('view-name').textContent = `${updatedMember.firstName} ${updatedMember.lastName}`;
-            document.getElementById('view-dob').textContent = new Date(updatedMember.dob).toLocaleDateString();
-            
-            // Switch back to view mode
-            document.getElementById('member-edit-mode').style.display = 'none';
-            document.getElementById('member-view-mode').style.display = 'block';
-            
-            alert('Member information updated successfully!');
-        }
-
-        function deleteMember() {
-            if (!currentMemberId) {
-                alert('No member selected for deletion');
-                return;
-            }
-            
-            const member = members.find(m => m.id === currentMemberId);
-            if (!member) {
-                alert('Member not found');
-                return;
-            }
-            
-            // Create custom confirmation dialog
-            const confirmDialog = document.createElement('div');
-            confirmDialog.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
-            
-            const dialogBox = document.createElement('div');
-            dialogBox.style.cssText = 'background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-width: 400px; text-align: center;';
-            dialogBox.innerHTML = `
-                <h3 style="margin-top: 0; color: #dc3545;">⚠️ Delete Member</h3>
-                <p style="margin: 20px 0;">Are you sure you want to delete <strong>${member.firstName} ${member.lastName}</strong>?</p>
-                <p style="margin: 10px 0; color: #666; font-size: 14px;">This will also delete all their evaluations and cannot be undone.</p>
-                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
-                    <button class="btn btn-secondary" onclick="this.closest('div[style*=fixed]').remove()" style="padding: 10px 20px;">Cancel</button>
-                    <button class="btn" id="confirm-delete-member-btn" style="background: #dc3545; border-color: #dc3545; color: white; padding: 10px 20px;">Delete Member</button>
-                </div>
-            `;
-            
-            confirmDialog.appendChild(dialogBox);
-            document.body.appendChild(confirmDialog);
-            
-            // Add click handler for delete button
-            document.getElementById('confirm-delete-member-btn').onclick = function() {
-                // Remove dialog
-                confirmDialog.remove();
-                
-                // Proceed with deletion
-                const memberName = `${member.firstName} ${member.lastName}`;
-                
-                // Remove member
-                members = members.filter(m => m.id !== currentMemberId);
-                
-                // Remove member's evaluations  
-                evaluations = evaluations.filter(e => e.memberId !== currentMemberId);
-                
-                saveData();
-                updateMemberList();
-                updateMemberSelect();
-                updateDashboard();
-                
-                backToMemberList();
-                
-                // Show success message
-                const successMsg = document.createElement('div');
-                successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #28a745; color: white; padding: 15px 20px; border-radius: 5px; z-index: 1000;';
-                successMsg.textContent = `${memberName} deleted successfully!`;
-                document.body.appendChild(successMsg);
-                
-                setTimeout(() => {
-                    successMsg.remove();
-                }, 3000);
-            };
         }
 
         function backToMemberList() {
@@ -1293,1423 +1642,11 @@
             document.querySelectorAll('.btn-delete-eval').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const evalId = this.getAttribute('data-eval-id');
-                    deleteEvaluation(evalId);
+                    deleteEvaluationFromHistory(evalId);
                 });
             });
         }
 
-        function startEvaluationForMember() {
-            if (!currentMemberId) return;
-            
-            // Switch to evaluation tab with this member pre-selected
-            showTab('evaluation');
-            document.getElementById('eval-member-select').value = currentMemberId;
-            
-            // Clear the notes field and transcript before initializing
-            document.getElementById('eval-notes').value = '';
-            clearTranscript();
-            
-            selectMemberForEval();
-        }
-
-        // Evaluation management
-        function selectMemberForEval() {
-            const select = document.getElementById('eval-member-select');
-            const memberId = select.value;
-            
-            if (!memberId) return;
-            
-            const member = members.find(m => m.id === memberId);
-            document.getElementById('eval-member-name').textContent = 
-                `${member.firstName} ${member.lastName} - ${new Date().toLocaleDateString()}`;
-            
-            initializeEvaluation(memberId);
-            document.getElementById('evaluation-form').style.display = 'block';
-            document.getElementById('eval-notes-section').style.display = 'block';
-            document.getElementById('eval-actions').style.display = 'flex';
-            
-            // Ensure voice recording is initialized for the notes section
-            setTimeout(() => {
-                const voiceBtn = document.getElementById('voice-record-btn');
-                if (voiceBtn && !voiceBtn.onclick) {
-                    voiceBtn.onclick = toggleRecording;
-                    if (!recognition) {
-                        initSpeechRecognition();
-                    }
-                }
-            }, 100);
-        }
-
-        function initializeEvaluation(memberId) {
-            console.log('Initializing evaluation with groups:', groups);
-            console.log('Segments:', segments);
-            
-            currentEvaluation = {
-                id: generateId(),
-                memberId: memberId,
-                date: new Date().toISOString(),
-                groups: {}
-            };
-            
-            const formEl = document.getElementById('evaluation-form');
-            formEl.innerHTML = '';
-            
-            groups.forEach(groupName => {
-                currentEvaluation.groups[groupName] = {
-                    segments: {},
-                    modifier: 5,  // Default modifier to 5
-                    total: 0
-                };
-                
-                const groupEl = createGroupElement(groupName);
-                formEl.appendChild(groupEl);
-                
-                segments[groupName].forEach(segName => {
-                    currentEvaluation.groups[groupName].segments[segName] = {
-                        pain: 2,      // Default to 2
-                        rom: 2,       // Default to 2
-                        strength: 2,  // Default to 2
-                        score: 3      // (2+2+2)/2 = 3
-                    };
-                });
-            });
-            
-            updateAllScores();
-        }
-
-        function createGroupElement(groupName) {
-            const div = document.createElement('div');
-            div.className = 'group-section';
-            div.innerHTML = `
-                <div class="group-header" onclick="toggleGroup('${groupName}')">
-                    <h3>
-                        <span style="font-size: 20px;">▼</span>
-                        ${groupName}
-                    </h3>
-                    <div class="group-total" id="group-total-${groupName.replace(/\s/g, '-')}">0</div>
-                </div>
-                <div class="group-content" id="group-content-${groupName.replace(/\s/g, '-')}">
-                    <table class="segment-table">
-                        <thead>
-                            <tr>
-                                <th>Segment</th>
-                                <th>Pain (0-2)</th>
-                                <th>ROM (0-2)</th>
-                                <th>Strength (0-2)</th>
-                                <th>Score</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${segments[groupName].map(seg => `
-                                <tr>
-                                    <td>${seg}</td>
-                                    <td><input type="number" class="segment-input" min="0" max="2" value="2" 
-                                        onchange="updateSegmentScore('${groupName}', '${seg}', 'pain', this.value)"></td>
-                                    <td><input type="number" class="segment-input" min="0" max="2" value="2" 
-                                        onchange="updateSegmentScore('${groupName}', '${seg}', 'rom', this.value)"></td>
-                                    <td><input type="number" class="segment-input" min="0" max="2" value="2" 
-                                        onchange="updateSegmentScore('${groupName}', '${seg}', 'strength', this.value)"></td>
-                                    <td class="segment-score" id="seg-score-${groupName.replace(/\s/g, '-')}-${seg.replace(/\s/g, '-')}">3.0</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                    <div class="modifier-section">
-                        <span class="modifier-label">Group Modifier:</span>
-                        <div class="modifier-controls">
-                            <button class="modifier-btn" onclick="changeModifier('${groupName}', -1)">-</button>
-                            <span class="modifier-value" id="modifier-${groupName.replace(/\s/g, '-')}">+5</span>
-                            <button class="modifier-btn" onclick="changeModifier('${groupName}', 1)">+</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            return div;
-        }
-
-        function createGroupElementWithData(groupName, groupData) {
-            const div = document.createElement('div');
-            div.className = 'group-section';
-            div.innerHTML = `
-                <div class="group-header" onclick="toggleGroup('${groupName}')">
-                    <h3>
-                        <span style="font-size: 20px;">▼</span>
-                        ${groupName}
-                    </h3>
-                    <div class="group-total" id="group-total-${groupName.replace(/\s/g, '-')}">${groupData.total.toFixed(1)}</div>
-                </div>
-                <div class="group-content" id="group-content-${groupName.replace(/\s/g, '-')}">
-                    <table class="segment-table">
-                        <thead>
-                            <tr>
-                                <th>Segment</th>
-                                <th>Pain (0-2)</th>
-                                <th>ROM (0-2)</th>
-                                <th>Strength (0-2)</th>
-                                <th>Score</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${segments[groupName].map(seg => {
-                                const segData = groupData.segments[seg];
-                                return `
-                                    <tr>
-                                        <td>${seg}</td>
-                                        <td><input type="number" class="segment-input" min="0" max="2" value="${segData.pain}" 
-                                            onchange="updateSegmentScore('${groupName}', '${seg}', 'pain', this.value)"></td>
-                                        <td><input type="number" class="segment-input" min="0" max="2" value="${segData.rom}" 
-                                            onchange="updateSegmentScore('${groupName}', '${seg}', 'rom', this.value)"></td>
-                                        <td><input type="number" class="segment-input" min="0" max="2" value="${segData.strength}" 
-                                            onchange="updateSegmentScore('${groupName}', '${seg}', 'strength', this.value)"></td>
-                                        <td class="segment-score" id="seg-score-${groupName.replace(/\s/g, '-')}-${seg.replace(/\s/g, '-')}">${segData.score.toFixed(1)}</td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                    <div class="modifier-section">
-                        <span class="modifier-label">Group Modifier:</span>
-                        <div class="modifier-controls">
-                            <button class="modifier-btn" onclick="changeModifier('${groupName}', -1)">-</button>
-                            <span class="modifier-value" id="modifier-${groupName.replace(/\s/g, '-')}">${groupData.modifier > 0 ? '+' : ''}${groupData.modifier}</span>
-                            <button class="modifier-btn" onclick="changeModifier('${groupName}', 1)">+</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            return div;
-        }
-
-        function toggleGroup(groupName) {
-            const content = document.getElementById(`group-content-${groupName.replace(/\s/g, '-')}`);
-            content.style.display = content.style.display === 'none' ? 'block' : 'none';
-        }
-
-        function updateSegmentScore(groupName, segmentName, field, value) {
-            const val = parseInt(value) || 0;
-            if (val < 0 || val > 2) return;
-            
-            currentEvaluation.groups[groupName].segments[segmentName][field] = val;
-            
-            // Calculate segment score
-            const seg = currentEvaluation.groups[groupName].segments[segmentName];
-            seg.score = (seg.pain + seg.rom + seg.strength) / 2;
-            
-            // Update UI
-            document.getElementById(`seg-score-${groupName.replace(/\s/g, '-')}-${segmentName.replace(/\s/g, '-')}`).textContent = 
-                seg.score.toFixed(1);
-            
-            updateAllScores();
-        }
-
-        function changeModifier(groupName, delta) {
-            const current = currentEvaluation.groups[groupName].modifier;
-            let newVal;
-            
-            // Only allow -5, 0, or 5
-            if (delta > 0) {
-                // Increment: -5 → 0 → 5 → 5
-                if (current === -5) newVal = 0;
-                else if (current === 0) newVal = 5;
-                else newVal = 5; // Stay at 5
-            } else {
-                // Decrement: 5 → 0 → -5 → -5
-                if (current === 5) newVal = 0;
-                else if (current === 0) newVal = -5;
-                else newVal = -5; // Stay at -5
-            }
-            
-            currentEvaluation.groups[groupName].modifier = newVal;
-            document.getElementById(`modifier-${groupName.replace(/\s/g, '-')}`).textContent = 
-                newVal > 0 ? `+${newVal}` : newVal;
-            
-            updateAllScores();
-        }
-
-        function updateAllScores() {
-            let overallScore = 0;
-            
-            groups.forEach(groupName => {
-                const group = currentEvaluation.groups[groupName];
-                
-                // Sum segment scores
-                let segmentTotal = 0;
-                Object.values(group.segments).forEach(seg => {
-                    segmentTotal += seg.score;
-                });
-                
-                // Apply modifier
-                group.total = Math.max(0, Math.min(20, segmentTotal + group.modifier));
-                overallScore += group.total;
-                
-                // Update UI
-                document.getElementById(`group-total-${groupName.replace(/\s/g, '-')}`).textContent = 
-                    group.total.toFixed(1);
-            });
-            
-            currentEvaluation.overallScore = overallScore;
-            document.getElementById('overall-score').textContent = Math.round(overallScore);
-        }
-
-        function saveEvaluation() {
-            if (!currentEvaluation) return;
-            
-            // Add notes to the evaluation
-            currentEvaluation.notes = document.getElementById('eval-notes').value || '';
-            
-            if (editingExisting) {
-                // Update existing evaluation
-                const index = evaluations.findIndex(e => e.id === currentEvaluation.id);
-                if (index !== -1) {
-                    evaluations[index] = currentEvaluation;
-                    alert('Evaluation updated successfully!');
-                }
-                editingExisting = false;
-            } else {
-                // Add new evaluation
-                evaluations.push(currentEvaluation);
-                alert('Evaluation saved successfully!');
-            }
-            
-            saveData();
-            
-            // Update dashboard to reflect changes
-            updateDashboard();
-            
-            showResults(currentEvaluation);
-            showTab('results');
-        }
-
-        function resetEvaluation() {
-            if (confirm('Are you sure you want to reset this evaluation?')) {
-                if (editingExisting && currentEvaluation) {
-                    // If editing, reload the original data
-                    const original = evaluations.find(e => e.id === currentEvaluation.id);
-                    if (original) {
-                        currentEvaluation = JSON.parse(JSON.stringify(original));
-                        loadEvaluationIntoForm(currentEvaluation);
-                        updateAllScores();
-                    }
-                } else {
-                    // If new evaluation, reset to defaults
-                    initializeEvaluation(currentEvaluation.memberId);
-                }
-            }
-        }
-
-        function editCurrentEvaluation() {
-            if (!viewingEvaluationId) return;
-            
-            const evaluation = evaluations.find(e => e.id === viewingEvaluationId);
-            if (!evaluation) return;
-            
-            editingExisting = true;
-            currentEvaluation = JSON.parse(JSON.stringify(evaluation)); // Deep clone
-            
-            showTab('evaluation');
-            
-            // Set member selection
-            const member = members.find(m => m.id === evaluation.memberId);
-            document.getElementById('eval-member-select').value = evaluation.memberId;
-            document.getElementById('eval-member-name').textContent = 
-                `${member.firstName} ${member.lastName} - ${new Date(evaluation.date).toLocaleDateString()} (Editing)`;
-            
-            // Show forms
-            document.getElementById('evaluation-form').style.display = 'block';
-            document.getElementById('eval-notes-section').style.display = 'block';
-            document.getElementById('eval-actions').style.display = 'flex';
-            
-            // Load existing data into form
-            loadEvaluationIntoForm(evaluation);
-            
-            // Update overall score
-            updateAllScores();
-        }
-
-        function loadEvaluationIntoForm(evaluation) {
-            const formEl = document.getElementById('evaluation-form');
-            formEl.innerHTML = '';
-            
-            // Load notes
-            document.getElementById('eval-notes').value = evaluation.notes || '';
-            
-            groups.forEach(groupName => {
-                const groupEl = createGroupElementWithData(groupName, evaluation.groups[groupName]);
-                formEl.appendChild(groupEl);
-            });
-        }
-
-        function startNewEvaluation() {
-            editingExisting = false;
-            showTab('evaluation');
-            document.getElementById('eval-member-select').value = '';
-            document.getElementById('evaluation-form').style.display = 'none';
-            document.getElementById('eval-notes-section').style.display = 'none';
-            document.getElementById('eval-actions').style.display = 'none';
-            document.getElementById('eval-member-name').textContent = 'Select a member to begin';
-            document.getElementById('overall-score').textContent = '0';
-            document.getElementById('eval-notes').value = '';
-            clearTranscript();
-        }
-
-        // Results display
-        function showResults(evaluation) {
-            const member = members.find(m => m.id === evaluation.memberId);
-            
-            viewingEvaluationId = evaluation.id;
-            
-            document.getElementById('results-empty').style.display = 'none';
-            document.getElementById('results-view').style.display = 'block';
-            
-            document.getElementById('results-title').textContent = 
-                `Evaluation Results - ${member.firstName} ${member.lastName} - ${new Date(evaluation.date).toLocaleDateString()}`;
-            document.getElementById('results-score').textContent = Math.round(evaluation.overallScore);
-            
-            // Display notes
-            const notesEl = document.getElementById('results-notes');
-            if (evaluation.notes && evaluation.notes.trim()) {
-                notesEl.textContent = evaluation.notes;
-            } else {
-                notesEl.innerHTML = '<em style="color: #999;">No notes recorded for this evaluation.</em>';
-            }
-            
-            // Draw trend chart for this member
-            drawResultsTrendChart(evaluation.memberId, evaluation.id);
-            
-            // Populate detailed results table
-            const tableBody = document.getElementById('detailed-results-table');
-            tableBody.innerHTML = '';
-            
-            groups.forEach((groupName, groupIndex) => {
-                const group = evaluation.groups[groupName];
-                const segmentNames = segments[groupName];
-                
-                segmentNames.forEach((segName, segIndex) => {
-                    const segment = group.segments[segName];
-                    const row = document.createElement('tr');
-                    
-                    // Determine if this is the first row for the group
-                    const isFirstInGroup = segIndex === 0;
-                    
-                    // Function to get color based on individual value (0, 1, or 2)
-                    const getValueColor = (value) => {
-                        if (value === 0) return 'style="background-color: #ffe4e1; text-align: center;"'; // Light red
-                        else if (value === 1) return 'style="background-color: #fff8dc; text-align: center;"'; // Light yellow
-                        else if (value === 2) return 'style="background-color: #e8f5e9; text-align: center;"'; // Light green
-                        return 'style="text-align: center;"';
-                    };
-                    
-                    // Get the lowest score among pain, ROM, and strength
-                    const lowestValue = Math.min(segment.pain, segment.rom, segment.strength);
-                    
-                    // Color for segment score based on lowest individual value
-                    const getScoreColorBasedOnLowest = (lowestVal) => {
-                        if (lowestVal === 0) return 'background-color: #ffe4e1;'; // Red
-                        else if (lowestVal === 1) return 'background-color: #fff8dc;'; // Yellow
-                        else if (lowestVal === 2) return 'background-color: #e8f5e9;'; // Green
-                        return '';
-                    };
-                    
-                    row.innerHTML = `
-                        ${isFirstInGroup ? 
-                            `<td rowspan="${segmentNames.length}" style="vertical-align: middle; font-weight: 600; background: #f8f9fa;">${groupName}</td>` 
-                            : ''}
-                        <td>${segName}</td>
-                        <td ${getValueColor(segment.pain)}>${segment.pain}</td>
-                        <td ${getValueColor(segment.rom)}>${segment.rom}</td>
-                        <td ${getValueColor(segment.strength)}>${segment.strength}</td>
-                        <td style="${getScoreColorBasedOnLowest(lowestValue)} text-align: center; font-weight: 600;">${segment.score.toFixed(1)}</td>
-                        ${isFirstInGroup ? 
-                            `<td rowspan="${segmentNames.length}" style="vertical-align: middle; text-align: center; background: #f8f9fa; font-weight: 600;">
-                                ${group.modifier > 0 ? '+' : ''}${group.modifier}
-                            </td>
-                            <td rowspan="${segmentNames.length}" style="vertical-align: middle; text-align: center; background: #f8f9fa; font-weight: 700; color: #667eea;">
-                                ${group.total.toFixed(1)}
-                            </td>` 
-                            : ''}
-                    `;
-                    
-                    tableBody.appendChild(row);
-                });
-            });
-            
-            // Add total row
-            const totalRow = document.createElement('tr');
-            totalRow.style.cssText = 'background: #667eea; color: white; font-weight: 700;';
-            totalRow.innerHTML = `
-                <td colspan="6" style="text-align: right; padding-right: 20px;">Overall Wellness Score:</td>
-                <td colspan="2" style="text-align: center; font-size: 18px;">${Math.round(evaluation.overallScore)}</td>
-            `;
-            tableBody.appendChild(totalRow);
-            
-            // Update group breakdown
-            const breakdownEl = document.getElementById('group-breakdown-list');
-            breakdownEl.innerHTML = '';
-            
-            groups.forEach(groupName => {
-                const group = evaluation.groups[groupName];
-                const percentage = (group.total / 20) * 100;
-                
-                const item = document.createElement('div');
-                item.className = 'breakdown-item';
-                item.innerHTML = `
-                    <div style="min-width: 120px;">${groupName}</div>
-                    <div class="breakdown-bar">
-                        <div class="breakdown-fill" style="width: ${percentage}%"></div>
-                    </div>
-                    <div style="min-width: 50px; text-align: right; font-weight: 600;">
-                        ${group.total.toFixed(1)}
-                    </div>
-                `;
-                breakdownEl.appendChild(item);
-            });
-            
-            // Add event listener for delete button
-            setTimeout(() => {
-                const deleteBtn = document.getElementById('delete-current-eval-btn');
-                if (deleteBtn) {
-                    deleteBtn.onclick = function() {
-                        deleteCurrentEvaluation();
-                    };
-                }
-            }, 100);
-        }
-
-        function viewEvaluation(evalId) {
-            const evaluation = evaluations.find(e => e.id === evalId);
-            if (evaluation) {
-                showResults(evaluation);
-                showTab('results');
-            }
-        }
-
-        function exportResults() {
-            if (!viewingEvaluationId) {
-                alert('No evaluation selected to export');
-                return;
-            }
-            
-            const evaluation = evaluations.find(e => e.id === viewingEvaluationId);
-            const member = members.find(m => m.id === evaluation.memberId);
-            
-            // Try to create a new window
-            const printWindow = window.open('', '_blank');
-            
-            // Check if popup was blocked
-            if (!printWindow || printWindow.closed || typeof printWindow.closed == 'undefined') {
-                alert('Popup blocked! Please allow popups for this site or use the Download Report button instead.');
-                return;
-            }
-            
-            // Generate HTML content for the PDF
-            const htmlContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Evaluation Report - ${member.firstName} ${member.lastName}</title>
-                    <style>
-                        @media print {
-                            body { margin: 0; }
-                            .no-print { display: none; }
-                        }
-                        body {
-                            font-family: Arial, sans-serif;
-                            line-height: 1.6;
-                            color: #333;
-                            max-width: 800px;
-                            margin: 0 auto;
-                            padding: 20px;
-                        }
-                        .header {
-                            text-align: center;
-                            margin-bottom: 30px;
-                            padding-bottom: 20px;
-                            border-bottom: 2px solid #667eea;
-                        }
-                        h1 {
-                            color: #667eea;
-                            margin: 10px 0;
-                        }
-                        .info-grid {
-                            display: grid;
-                            grid-template-columns: 1fr 1fr;
-                            gap: 20px;
-                            margin-bottom: 30px;
-                        }
-                        .info-box {
-                            padding: 15px;
-                            background: #f8f9fa;
-                            border-radius: 8px;
-                        }
-                        .score-section {
-                            text-align: center;
-                            margin: 30px 0;
-                            padding: 20px;
-                            background: #f8f9fa;
-                            border-radius: 8px;
-                        }
-                        .score-value {
-                            font-size: 48px;
-                            font-weight: bold;
-                            color: #667eea;
-                            margin: 10px 0;
-                        }
-                        table {
-                            width: 100%;
-                            border-collapse: collapse;
-                            margin: 20px 0;
-                        }
-                        th, td {
-                            border: 1px solid #ddd;
-                            padding: 8px;
-                            text-align: left;
-                        }
-                        th {
-                            background-color: #667eea;
-                            color: white;
-                        }
-                        .group-header {
-                            background-color: #f8f9fa;
-                            font-weight: bold;
-                        }
-                        .score-good { background-color: #d4edda; }
-                        .score-warning { background-color: #fff3cd; }
-                        .score-danger { background-color: #f8d7da; }
-                        .notes-section {
-                            margin: 30px 0;
-                            padding: 20px;
-                            background: #f8f9fa;
-                            border-radius: 8px;
-                        }
-                        .footer {
-                            margin-top: 50px;
-                            text-align: center;
-                            color: #666;
-                            font-size: 12px;
-                        }
-                        .no-print {
-                            margin: 20px;
-                            text-align: center;
-                        }
-                        .btn {
-                            padding: 10px 20px;
-                            margin: 0 5px;
-                            border: none;
-                            border-radius: 5px;
-                            cursor: pointer;
-                            font-size: 16px;
-                        }
-                        .btn-primary {
-                            background: #667eea;
-                            color: white;
-                        }
-                        .btn-secondary {
-                            background: #6c757d;
-                            color: white;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="no-print">
-                        <button class="btn btn-primary" onclick="window.print()">Print/Save as PDF</button>
-                        <button class="btn btn-secondary" onclick="window.close()">Close</button>
-                        <p style="margin-top: 10px; color: #666;">
-                            To save as PDF: Click "Print" → Select "Save as PDF" as the printer
-                        </p>
-                    </div>
-                    
-                    <div class="header">
-                        <h1>Athletic Wellness Assessment Report</h1>
-                        <h2>${member.firstName} ${member.lastName}</h2>
-                        <p>Date: ${new Date(evaluation.date).toLocaleDateString()}</p>
-                    </div>
-                    
-                    <div class="info-grid">
-                        <div class="info-box">
-                            <h3>Member Information</h3>
-                            <p><strong>Name:</strong> ${member.firstName} ${member.lastName}</p>
-                            <p><strong>DOB:</strong> ${new Date(member.dob).toLocaleDateString()}</p>
-                        </div>
-                        <div class="info-box">
-                            <h3>Evaluation Summary</h3>
-                            <p><strong>Date:</strong> ${new Date(evaluation.date).toLocaleDateString()}</p>
-                            <p><strong>Time:</strong> ${new Date(evaluation.date).toLocaleTimeString()}</p>
-                            <p><strong>Evaluator:</strong> _____________________</p>
-                        </div>
-                    </div>
-                    
-                    <div class="score-section">
-                        <h3>Overall Wellness Score</h3>
-                        <div class="score-value">${Math.round(evaluation.overallScore)}/100</div>
-                    </div>
-                    
-                    <h3>Detailed Assessment Results</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Body Region</th>
-                                <th>Segment</th>
-                                <th>Pain (0-2)</th>
-                                <th>ROM (0-2)</th>
-                                <th>Strength (0-2)</th>
-                                <th>Score</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${groups.map(groupName => {
-                                const group = evaluation.groups[groupName];
-                                return segments[groupName].map((segName, index) => {
-                                    const segment = group.segments[segName];
-                                    const scoreClass = segment.score >= 2.5 ? 'score-good' : 
-                                                     segment.score >= 1.5 ? 'score-warning' : 'score-danger';
-                                    
-                                    return `
-                                        <tr>
-                                            ${index === 0 ? `<td rowspan="${segments[groupName].length}" class="group-header">${groupName}</td>` : ''}
-                                            <td>${segName}</td>
-                                            <td class="${segment.pain === 2 ? 'score-good' : segment.pain === 1 ? 'score-warning' : 'score-danger'}">${segment.pain}</td>
-                                            <td class="${segment.rom === 2 ? 'score-good' : segment.rom === 1 ? 'score-warning' : 'score-danger'}">${segment.rom}</td>
-                                            <td class="${segment.strength === 2 ? 'score-good' : segment.strength === 1 ? 'score-warning' : 'score-danger'}">${segment.strength}</td>
-                                            <td class="${scoreClass}">${segment.score.toFixed(1)}</td>
-                                        </tr>
-                                    `;
-                                }).join('');
-                            }).join('')}
-                        </tbody>
-                    </table>
-                    
-                    <h3>Group Totals</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Body Region</th>
-                                <th>Base Score</th>
-                                <th>Modifier</th>
-                                <th>Total Score (max 20)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${groups.map(groupName => {
-                                const group = evaluation.groups[groupName];
-                                const baseScore = Object.values(group.segments).reduce((sum, seg) => sum + seg.score, 0);
-                                return `
-                                    <tr>
-                                        <td>${groupName}</td>
-                                        <td>${baseScore.toFixed(1)}</td>
-                                        <td>${group.modifier > 0 ? '+' : ''}${group.modifier}</td>
-                                        <td><strong>${group.total.toFixed(1)}</strong></td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                            <tr style="background: #667eea; color: white;">
-                                <td colspan="3"><strong>Overall Wellness Score</strong></td>
-                                <td><strong>${Math.round(evaluation.overallScore)}/100</strong></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    
-                    ${evaluation.notes ? `
-                        <div class="notes-section">
-                            <h3>Evaluation Notes</h3>
-                            <p>${evaluation.notes.replace(/\n/g, '<br>')}</p>
-                        </div>
-                    ` : ''}
-                    
-                    <div class="footer">
-                        <p>Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
-                        <p>Athletic Wellness Assessment System</p>
-                    </div>
-                </body>
-                </html>
-            `;
-            
-            try {
-                // Write content to new window
-                printWindow.document.write(htmlContent);
-                printWindow.document.close();
-                
-                // Auto-trigger print dialog after content loads
-                printWindow.onload = function() {
-                    setTimeout(() => {
-                        printWindow.print();
-                    }, 500);
-                };
-            } catch (error) {
-                console.error('Error creating print window:', error);
-                alert('Unable to create print preview. Please use the Download Report button instead.');
-                printWindow.close();
-            }
-        }
-
-        function exportMemberProfile() {
-            if (!currentMemberId) {
-                alert('No member profile selected to export');
-                return;
-            }
-            
-            const member = members.find(m => m.id === currentMemberId);
-            if (!member) {
-                alert('Member not found');
-                return;
-            }
-            
-            // Get member's evaluations
-            const memberEvals = evaluations
-                .filter(e => e.memberId === currentMemberId)
-                .sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            // Calculate statistics
-            const totalEvals = memberEvals.length;
-            const avgScore = totalEvals > 0 ? (memberEvals.reduce((sum, e) => sum + e.overallScore, 0) / totalEvals) : 0;
-            const highestScore = totalEvals > 0 ? Math.max(...memberEvals.map(e => e.overallScore)) : 0;
-            const lowestScore = totalEvals > 0 ? Math.min(...memberEvals.map(e => e.overallScore)) : 0;
-            const latestScore = totalEvals > 0 ? memberEvals[0].overallScore : 0;
-            
-            // Try to create a new window
-            const printWindow = window.open('', '_blank');
-            
-            // Check if popup was blocked
-            if (!printWindow || printWindow.closed || typeof printWindow.closed == 'undefined') {
-                alert('Popup blocked! Please allow popups for this site or use the Download Report button instead.');
-                return;
-            }
-            
-            // Generate HTML content for the PDF
-            const htmlContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Member Profile - ${member.firstName} ${member.lastName}</title>
-                    <style>
-                        @page {
-                            margin: 0.75in;
-                            size: letter;
-                        }
-                        
-                        @media print {
-                            body { 
-                                margin: 0; 
-                                font-size: 12pt;
-                                line-height: 1.4;
-                            }
-                            .no-print { display: none !important; }
-                            .page-break { page-break-before: always; }
-                            .avoid-break { page-break-inside: avoid; }
-                            h1, h2, h3, h4 { page-break-after: avoid; }
-                            table { page-break-inside: auto; }
-                            tr { page-break-inside: avoid; page-break-after: auto; }
-                            .header { border-bottom: 2px solid #333; }
-                        }
-                        
-                        * {
-                            box-sizing: border-box;
-                        }
-                        
-                        body {
-                            font-family: 'Times New Roman', serif;
-                            line-height: 1.5;
-                            color: #000;
-                            margin: 0;
-                            padding: 0;
-                            background: white;
-                        }
-                        
-                        .container {
-                            max-width: 100%;
-                            margin: 0;
-                            padding: 0;
-                        }
-                        
-                        .header {
-                            text-align: center;
-                            margin-bottom: 25px;
-                            padding-bottom: 15px;
-                            border-bottom: 2px solid #333;
-                        }
-                        
-                        h1 {
-                            font-size: 24pt;
-                            font-weight: bold;
-                            margin: 0 0 10px 0;
-                            color: #000;
-                        }
-                        
-                        h2 {
-                            font-size: 20pt;
-                            font-weight: bold;
-                            margin: 0 0 5px 0;
-                            color: #000;
-                        }
-                        
-                        h3 {
-                            font-size: 16pt;
-                            font-weight: bold;
-                            margin: 20px 0 10px 0;
-                            color: #000;
-                        }
-                        
-                        h4 {
-                            font-size: 14pt;
-                            font-weight: bold;
-                            margin: 15px 0 8px 0;
-                            color: #000;
-                        }
-                        
-                        p {
-                            margin: 8px 0;
-                            font-size: 12pt;
-                        }
-                        
-                        .info-grid {
-                            display: grid;
-                            grid-template-columns: 1fr 1fr;
-                            gap: 20px;
-                            margin-bottom: 25px;
-                        }
-                        
-                        .info-box {
-                            padding: 15px;
-                            border: 1px solid #ccc;
-                            border-radius: 5px;
-                            background: #f9f9f9;
-                        }
-                        
-                        .info-box h3 {
-                            margin-top: 0;
-                            margin-bottom: 12px;
-                            font-size: 14pt;
-                            border-bottom: 1px solid #ddd;
-                            padding-bottom: 5px;
-                        }
-                        
-                        .info-box p {
-                            margin: 6px 0;
-                            font-size: 11pt;
-                        }
-                        
-                        .stats-grid {
-                            display: grid;
-                            grid-template-columns: repeat(4, 1fr);
-                            gap: 15px;
-                            margin: 20px 0;
-                            page-break-inside: avoid;
-                        }
-                        
-                        .stat-box {
-                            text-align: center;
-                            padding: 12px;
-                            border: 1px solid #ccc;
-                            border-radius: 5px;
-                            background: #f9f9f9;
-                        }
-                        
-                        .stat-value {
-                            font-size: 18pt;
-                            font-weight: bold;
-                            margin: 5px 0;
-                            color: #000;
-                        }
-                        
-                        .stat-label {
-                            font-size: 9pt;
-                            color: #333;
-                            text-transform: uppercase;
-                            letter-spacing: 0.5px;
-                        }
-                        
-                        table {
-                            width: 100%;
-                            border-collapse: collapse;
-                            margin: 15px 0;
-                            font-size: 10pt;
-                        }
-                        
-                        th, td {
-                            border: 1px solid #000;
-                            padding: 6px 4px;
-                            text-align: left;
-                            vertical-align: top;
-                        }
-                        
-                        th {
-                            background-color: #e6e6e6;
-                            font-weight: bold;
-                            text-align: center;
-                            font-size: 10pt;
-                        }
-                        
-                        td {
-                            font-size: 9pt;
-                        }
-                        
-                        .score-good { 
-                            background-color: #e8f5e9 !important; 
-                            -webkit-print-color-adjust: exact;
-                            color-adjust: exact;
-                        }
-                        .score-warning { 
-                            background-color: #fff8e1 !important; 
-                            -webkit-print-color-adjust: exact;
-                            color-adjust: exact;
-                        }
-                        .score-danger { 
-                            background-color: #ffebee !important; 
-                            -webkit-print-color-adjust: exact;
-                            color-adjust: exact;
-                        }
-                        
-                        .progress-analysis {
-                            margin-top: 20px;
-                            padding: 15px;
-                            border: 1px solid #ccc;
-                            border-radius: 5px;
-                            background: #f9f9f9;
-                            page-break-inside: avoid;
-                        }
-                        
-                        .progress-analysis h4 {
-                            margin-top: 0;
-                            margin-bottom: 10px;
-                            border-bottom: 1px solid #ddd;
-                            padding-bottom: 5px;
-                        }
-                        
-                        .progress-analysis p {
-                            margin: 8px 0;
-                            font-size: 11pt;
-                        }
-                        
-                        .no-data {
-                            text-align: center;
-                            color: #666;
-                            font-style: italic;
-                            padding: 30px;
-                            border: 1px solid #ddd;
-                            border-radius: 5px;
-                            background: #f9f9f9;
-                            margin: 20px 0;
-                        }
-                        
-                        .footer {
-                            margin-top: 30px;
-                            padding-top: 15px;
-                            border-top: 1px solid #ccc;
-                            text-align: center;
-                            color: #666;
-                            font-size: 9pt;
-                        }
-                        
-                        .no-print {
-                            margin: 20px;
-                            text-align: center;
-                            padding: 15px;
-                            background: #f0f0f0;
-                            border: 1px solid #ccc;
-                            border-radius: 5px;
-                        }
-                        
-                        .btn {
-                            padding: 10px 20px;
-                            margin: 0 5px;
-                            border: none;
-                            border-radius: 5px;
-                            cursor: pointer;
-                            font-size: 14px;
-                        }
-                        
-                        .btn-primary {
-                            background: #007bff;
-                            color: white;
-                        }
-                        
-                        .btn-secondary {
-                            background: #6c757d;
-                            color: white;
-                        }
-                        
-                        /* Ensure proper spacing for different sections */
-                        .section {
-                            margin-bottom: 25px;
-                        }
-                        
-                        @media screen {
-                            body {
-                                padding: 20px;
-                                background: #f5f5f5;
-                            }
-                            .container {
-                                background: white;
-                                padding: 30px;
-                                border-radius: 8px;
-                                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                                max-width: 8.5in;
-                                margin: 0 auto;
-                            }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="no-print">
-                        <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
-                        <button class="btn btn-secondary" onclick="window.close()">✖️ Close</button>
-                        <p style="margin-top: 10px; color: #666; font-size: 12px;">
-                            <strong>Instructions:</strong> Click "Print" → Select "Save as PDF" as the destination → Click "Save"
-                        </p>
-                    </div>
-                    
-                    <div class="container">
-                        <div class="header">
-                            <h1>MEMBER PROFILE REPORT</h1>
-                            <h2>${member.firstName} ${member.lastName}</h2>
-                            <p style="margin: 10px 0 0 0; font-size: 11pt;">Report Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
-                        </div>
-                        
-                        <div class="section">
-                            <div class="info-grid">
-                                <div class="info-box avoid-break">
-                                    <h3>Member Information</h3>
-                                    <p><strong>Full Name:</strong> ${member.firstName} ${member.lastName}</p>
-                                    <p><strong>Date of Birth:</strong> ${new Date(member.dob).toLocaleDateString()}</p>
-                                    <p><strong>Member Since:</strong> ${new Date(member.createdAt).toLocaleDateString()}</p>
-                                    <p><strong>Days as Member:</strong> ${Math.floor((new Date() - new Date(member.createdAt)) / (1000 * 60 * 60 * 24))} days</p>
-                                </div>
-                                <div class="info-box avoid-break">
-                                    <h3>Assessment Summary</h3>
-                                    <p><strong>Total Evaluations:</strong> ${totalEvals}</p>
-                                    <p><strong>Most Recent:</strong> ${totalEvals > 0 ? new Date(memberEvals[0].date).toLocaleDateString() : 'None'}</p>
-                                    <p><strong>First Evaluation:</strong> ${totalEvals > 0 ? new Date(memberEvals[memberEvals.length - 1].date).toLocaleDateString() : 'None'}</p>
-                                    <p><strong>Assessment Period:</strong> ${totalEvals > 1 ? 
-                                        `${Math.floor((new Date(memberEvals[0].date) - new Date(memberEvals[memberEvals.length - 1].date)) / (1000 * 60 * 60 * 24))} days` 
-                                        : 'N/A'}</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        ${totalEvals > 0 ? `
-                            <div class="section">
-                                <h3>Performance Statistics</h3>
-                                <div class="stats-grid">
-                                    <div class="stat-box">
-                                        <div class="stat-value">${Math.round(latestScore)}</div>
-                                        <div class="stat-label">Current Score</div>
-                                    </div>
-                                    <div class="stat-box">
-                                        <div class="stat-value">${Math.round(avgScore)}</div>
-                                        <div class="stat-label">Average Score</div>
-                                    </div>
-                                    <div class="stat-box">
-                                        <div class="stat-value">${Math.round(highestScore)}</div>
-                                        <div class="stat-label">Best Score</div>
-                                    </div>
-                                    <div class="stat-box">
-                                        <div class="stat-value">${Math.round(lowestScore)}</div>
-                                        <div class="stat-label">Lowest Score</div>
-                                    </div>
-                                </div>
-                            </div>
-                        ` : ''}
-                        
-                        <div class="section">
-                            <h3>Complete Evaluation History</h3>
-                            ${totalEvals > 0 ? `
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 12%;">Date</th>
-                                            <th style="width: 10%;">Overall</th>
-                                            <th style="width: 12%;">Trunk/Neck</th>
-                                            <th style="width: 12%;">Upper L</th>
-                                            <th style="width: 12%;">Upper R</th>
-                                            <th style="width: 12%;">Lower L</th>
-                                            <th style="width: 12%;">Lower R</th>
-                                            <th style="width: 18%;">Notes</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${memberEvals.map(evaluation => {
-                                            let scoreClass = 'score-warning';
-                                            if (evaluation.overallScore >= 80) scoreClass = 'score-good';
-                                            else if (evaluation.overallScore < 60) scoreClass = 'score-danger';
-                                            
-                                            return `
-                                                <tr>
-                                                    <td>${new Date(evaluation.date).toLocaleDateString()}</td>
-                                                    <td class="${scoreClass}" style="text-align: center; font-weight: bold;">${Math.round(evaluation.overallScore)}</td>
-                                                    <td style="text-align: center;">${evaluation.groups['Trunk and Neck'].total.toFixed(1)}</td>
-                                                    <td style="text-align: center;">${evaluation.groups['Upper Extremities - Left'].total.toFixed(1)}</td>
-                                                    <td style="text-align: center;">${evaluation.groups['Upper Extremities - Right'].total.toFixed(1)}</td>
-                                                    <td style="text-align: center;">${evaluation.groups['Lower Extremities - Left'].total.toFixed(1)}</td>
-                                                    <td style="text-align: center;">${evaluation.groups['Lower Extremities - Right'].total.toFixed(1)}</td>
-                                                    <td style="font-size: 8pt;">${evaluation.notes ? (evaluation.notes.length > 60 ? evaluation.notes.substring(0, 60) + '...' : evaluation.notes) : 'No notes'}</td>
-                                                </tr>
-                                            `;
-                                        }).join('')}
-                                    </tbody>
-                                </table>
-                                
-                                ${totalEvals > 1 ? `
-                                    <div class="progress-analysis avoid-break">
-                                        <h4>Progress Analysis</h4>
-                                        <p><strong>Overall Trend:</strong> ${latestScore > memberEvals[memberEvals.length - 1].overallScore ? 
-                                            `Improving trend with ${(latestScore - memberEvals[memberEvals.length - 1].overallScore).toFixed(1)} point gain from first to most recent evaluation` :
-                                            latestScore < memberEvals[memberEvals.length - 1].overallScore ?
-                                            `Declining trend with ${Math.abs(latestScore - memberEvals[memberEvals.length - 1].overallScore).toFixed(1)} point decrease from first to most recent evaluation` :
-                                            'Stable performance with no significant change from first to most recent evaluation'}</p>
-                                        <p><strong>Score Variability:</strong> ${(highestScore - lowestScore).toFixed(1)} point range between highest and lowest scores</p>
-                                        <p><strong>Assessment Frequency:</strong> ${totalEvals > 1 ? 
-                                            `Average of ${(totalEvals / ((new Date(memberEvals[0].date) - new Date(memberEvals[memberEvals.length - 1].date)) / (1000 * 60 * 60 * 24 * 30.44))).toFixed(1)} evaluations per month` :
-                                            'Insufficient data for frequency calculation'}</p>
-                                        <p><strong>Performance Rating:</strong> ${avgScore >= 80 ? 'Excellent overall performance' : avgScore >= 70 ? 'Good overall performance' : avgScore >= 60 ? 'Fair overall performance' : 'Needs attention and focused improvement'}</p>
-                                    </div>
-                                ` : ''}
-                            ` : `
-                                <div class="no-data avoid-break">
-                                    <p><strong>No Evaluations Available</strong></p>
-                                    <p>This member has not completed any wellness assessments yet.</p>
-                                    <p>Schedule an initial evaluation to begin tracking their wellness profile.</p>
-                                </div>
-                            `}
-                        </div>
-                        
-                        <div class="footer">
-                            <p>Athletic Wellness Assessment System | Professional Member Report</p>
-                            <p>This report contains confidential health information and should be handled accordingly.</p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-            `;
-            
-            try {
-                // Write content to new window
-                printWindow.document.write(htmlContent);
-                printWindow.document.close();
-                
-                // Auto-trigger print dialog after content loads
-                printWindow.onload = function() {
-                    setTimeout(() => {
-                        printWindow.print();
-                    }, 500);
-                };
-            } catch (error) {
-                console.error('Error creating print window:', error);
-                alert('Unable to create print preview.');
-                printWindow.close();
-            }
-        }
-
-        // Delete evaluation functions
-        function deleteEvaluation(evalId) {
-            console.log('deleteEvaluation called with:', evalId);
-            
-            const evaluation = evaluations.find(e => e.id === evalId);
-            if (!evaluation) {
-                alert('Evaluation not found');
-                return;
-            }
-            
-            const member = members.find(m => m.id === evaluation.memberId);
-            const memberName = member ? `${member.firstName} ${member.lastName}` : 'Unknown Member';
-            const evalDate = new Date(evaluation.date).toLocaleDateString();
-            
-            // Create custom confirmation dialog
-            const confirmDialog = document.createElement('div');
-            confirmDialog.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
-            
-            const dialogBox = document.createElement('div');
-            dialogBox.style.cssText = 'background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-width: 400px; text-align: center;';
-            dialogBox.innerHTML = `
-                <h3 style="margin-top: 0; color: #dc3545;">⚠️ Delete Evaluation</h3>
-                <p style="margin: 20px 0;">Are you sure you want to delete the evaluation for <strong>${memberName}</strong> from <strong>${evalDate}</strong>?</p>
-                <p style="margin: 10px 0; color: #666; font-size: 14px;">This action cannot be undone.</p>
-                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
-                    <button class="btn btn-secondary" onclick="this.closest('div[style*=fixed]').remove()" style="padding: 10px 20px;">Cancel</button>
-                    <button class="btn" id="confirm-delete-eval-btn" style="background: #dc3545; border-color: #dc3545; color: white; padding: 10px 20px;">Delete Evaluation</button>
-                </div>
-            `;
-            
-            confirmDialog.appendChild(dialogBox);
-            document.body.appendChild(confirmDialog);
-            
-            // Add click handler for delete button
-            document.getElementById('confirm-delete-eval-btn').onclick = function() {
-                console.log('Delete confirmed for evaluation:', evalId);
-                
-                // Remove dialog
-                confirmDialog.remove();
-                
-                // Remove evaluation from array
-                const beforeCount = evaluations.length;
-                evaluations = evaluations.filter(e => e.id !== evalId);
-                const afterCount = evaluations.length;
-                
-                console.log('Evaluations before:', beforeCount, 'after:', afterCount);
-                
-                // Save data
-                saveData();
-                
-                // Update displays
-                updateDashboard();
-                
-                // If viewing a member profile, refresh the evaluation history
-                if (currentMemberId) {
-                    loadMemberEvaluationHistory(currentMemberId);
-                    drawTrendChart(currentMemberId);
-                }
-                
-                // Show success message
-                const successMsg = document.createElement('div');
-                successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #28a745; color: white; padding: 15px 20px; border-radius: 5px; z-index: 1000;';
-                successMsg.textContent = `Evaluation for ${memberName} deleted successfully!`;
-                document.body.appendChild(successMsg);
-                
-                setTimeout(() => {
-                    successMsg.remove();
-                }, 3000);
-            };
-        }
-
-        function deleteCurrentEvaluation() {
-            console.log('deleteCurrentEvaluation called, viewingEvaluationId:', viewingEvaluationId);
-            
-            if (!viewingEvaluationId) {
-                alert('No evaluation selected for deletion');
-                return;
-            }
-            
-            const evaluation = evaluations.find(e => e.id === viewingEvaluationId);
-            if (!evaluation) {
-                alert('Evaluation not found');
-                return;
-            }
-            
-            const member = members.find(m => m.id === evaluation.memberId);
-            const memberName = member ? `${member.firstName} ${member.lastName}` : 'Unknown Member';
-            const evalDate = new Date(evaluation.date).toLocaleDateString();
-            
-            // Create custom confirmation dialog
-            const confirmDialog = document.createElement('div');
-            confirmDialog.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
-            
-            const dialogBox = document.createElement('div');
-            dialogBox.style.cssText = 'background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-width: 400px; text-align: center;';
-            dialogBox.innerHTML = `
-                <h3 style="margin-top: 0; color: #dc3545;">⚠️ Delete Evaluation</h3>
-                <p style="margin: 20px 0;">Are you sure you want to delete the evaluation for <strong>${memberName}</strong> from <strong>${evalDate}</strong>?</p>
-                <p style="margin: 10px 0; color: #666; font-size: 14px;">This action cannot be undone.</p>
-                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px;">
-                    <button class="btn btn-secondary" onclick="this.closest('div[style*=fixed]').remove()" style="padding: 10px 20px;">Cancel</button>
-                    <button class="btn" id="confirm-delete-current-eval-btn" style="background: #dc3545; border-color: #dc3545; color: white; padding: 10px 20px;">Delete Evaluation</button>
-                </div>
-            `;
-            
-            confirmDialog.appendChild(dialogBox);
-            document.body.appendChild(confirmDialog);
-            
-            // Add click handler for delete button
-            document.getElementById('confirm-delete-current-eval-btn').onclick = function() {
-                console.log('Delete confirmed, proceeding...');
-                
-                // Remove dialog
-                confirmDialog.remove();
-                
-                // Remove evaluation from array
-                const beforeCount = evaluations.length;
-                evaluations = evaluations.filter(e => e.id !== viewingEvaluationId);
-                const afterCount = evaluations.length;
-                
-                console.log('Evaluations before:', beforeCount, 'after:', afterCount);
-                
-                // Save data
-                saveData();
-                
-                // Update dashboard
-                updateDashboard();
-                
-                // Show success message
-                const successMsg = document.createElement('div');
-                successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #28a745; color: white; padding: 15px 20px; border-radius: 5px; z-index: 1000;';
-                successMsg.textContent = `Evaluation for ${memberName} deleted successfully!`;
-                document.body.appendChild(successMsg);
-                
-                setTimeout(() => {
-                    successMsg.remove();
-                }, 3000);
-                
-                // Return to dashboard
-                showTab('dashboard');
-            };
-        }
-
-        // Dashboard updates
-        function updateDashboard() {
-            // Update member count
-            document.getElementById('total-members').textContent = members.length;
-            
-            // Calculate weekly evaluations
-            const now = new Date();
-            const weekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
-            
-            const weeklyEvals = evaluations.filter(e => {
-                const evalDate = new Date(e.date);
-                return evalDate >= weekAgo && evalDate <= now;
-            }).length;
-            
-            document.getElementById('weekly-evals').textContent = weeklyEvals;
-            
-            console.log('Dashboard updated - Total evals:', evaluations.length, 'Weekly:', weeklyEvals);
-            
-            updateRecentEvaluations();
-            updateMemberList();
-            updateMemberSelect();
-        }
-
-        function updateRecentEvaluations() {
-            const recentEl = document.getElementById('recent-evals');
-            
-            if (evaluations.length === 0) {
-                recentEl.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No evaluations yet. Start by adding a member!</p>';
-                return;
-            }
-            
-            // Sort by date and take last 10
-            const recent = evaluations
-                .sort((a, b) => new Date(b.date) - new Date(a.date))
-                .slice(0, 10);
-            
-            recentEl.innerHTML = recent.map((eval, index) => {
-                const member = members.find(m => m.id === eval.memberId);
-                const prevEval = evaluations[index + 1];
-                const scoreDiff = prevEval ? eval.overallScore - prevEval.overallScore : 0;
-                
-                let scoreClass = 'score-warning';
-                if (eval.overallScore >= 80) scoreClass = 'score-good';
-                else if (eval.overallScore < 60) scoreClass = 'score-danger';
-                
-                return `
-                    <div class="eval-item" onclick="viewEvaluation('${eval.id}')">
-                        <div>
-                            <strong>${member ? `${member.firstName} ${member.lastName}` : 'Unknown Member'}</strong>
-                            <div style="color: #666; font-size: 14px;">
-                                ${new Date(eval.date).toLocaleDateString()}
-                            </div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            ${scoreDiff !== 0 ? `
-                                <span style="color: ${scoreDiff > 0 ? '#28a745' : '#dc3545'}; font-size: 14px;">
-                                    ${scoreDiff > 0 ? '▲' : '▼'} ${Math.abs(scoreDiff).toFixed(1)}
-                                </span>
-                            ` : ''}
-                            <span class="score-badge ${scoreClass}">
-                                ${Math.round(eval.overallScore)}
-                            </span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Chart functions
         function drawTrendChart(memberId) {
             const canvas = document.getElementById('trend-chart');
             if (!canvas) return;
@@ -2837,1111 +1774,59 @@
             ctx.fillText('Wellness Score Over Time', canvas.width / 2, 25);
         }
 
-        function drawResultsTrendChart(memberId, currentEvalId) {
-            const canvas = document.getElementById('results-trend-chart');
-            if (!canvas) return;
-            
-            const ctx = canvas.getContext('2d');
-            
-            // Get member's evaluations
-            const memberEvals = evaluations
-                .filter(e => e.memberId === memberId)
-                .sort((a, b) => new Date(a.date) - new Date(b.date));
-            
-            // Clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            if (memberEvals.length === 0) {
-                ctx.fillStyle = '#999';
-                ctx.font = '16px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('No evaluations to display', canvas.width / 2, canvas.height / 2);
-                return;
-            }
-            
-            if (memberEvals.length === 1) {
-                ctx.fillStyle = '#999';
-                ctx.font = '16px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('Need at least 2 evaluations to show trend', canvas.width / 2, canvas.height / 2);
-                return;
-            }
-            
-            // Set up chart dimensions
-            const padding = 50;
-            const chartWidth = canvas.width - (padding * 2);
-            const chartHeight = canvas.height - (padding * 2);
-            
-            // Find min and max scores for scaling
-            const scores = memberEvals.map(e => e.overallScore);
-            const minScore = Math.max(0, Math.min(...scores) - 10);
-            const maxScore = Math.min(100, Math.max(...scores) + 10);
-            
-            // Draw axes
-            ctx.strokeStyle = '#ddd';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            // Y-axis
-            ctx.moveTo(padding, padding);
-            ctx.lineTo(padding, canvas.height - padding);
-            // X-axis
-            ctx.lineTo(canvas.width - padding, canvas.height - padding);
-            ctx.stroke();
-            
-            // Draw Y-axis labels (scores)
-            ctx.fillStyle = '#666';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'right';
-            for (let i = 0; i <= 5; i++) {
-                const score = minScore + (maxScore - minScore) * (i / 5);
-                const y = canvas.height - padding - (chartHeight * (i / 5));
-                ctx.fillText(Math.round(score), padding - 10, y + 4);
+        function deleteEvaluationFromHistory(evalId) {
+            if (confirm('Are you sure you want to delete this evaluation?')) {
+                evaluations = evaluations.filter(e => e.id !== evalId);
+                saveData();
+                updateDashboard();
                 
-                // Draw grid lines
-                ctx.strokeStyle = '#f0f0f0';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(padding, y);
-                ctx.lineTo(canvas.width - padding, y);
-                ctx.stroke();
-            }
-            
-            // Draw trend line
-            ctx.strokeStyle = '#667eea';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            
-            memberEvals.forEach((eval, index) => {
-                const x = padding + (chartWidth * (index / (memberEvals.length - 1)));
-                const y = canvas.height - padding - (chartHeight * ((eval.overallScore - minScore) / (maxScore - minScore)));
-                
-                if (index === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
+                // Refresh the member's evaluation history
+                if (currentMemberId) {
+                    loadMemberEvaluationHistory(currentMemberId);
+                    drawTrendChart(currentMemberId);
                 }
-            });
-            ctx.stroke();
-            
-            // Draw data points and labels
-            memberEvals.forEach((eval, index) => {
-                const x = padding + (chartWidth * (index / (memberEvals.length - 1)));
-                const y = canvas.height - padding - (chartHeight * ((eval.overallScore - minScore) / (maxScore - minScore)));
                 
-                // Highlight current evaluation
-                const isCurrentEval = eval.id === currentEvalId;
-                
-                // Draw point
-                ctx.fillStyle = isCurrentEval ? '#ff6b6b' : '#667eea';
-                ctx.beginPath();
-                ctx.arc(x, y, isCurrentEval ? 8 : 6, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Draw white center
-                ctx.fillStyle = 'white';
-                ctx.beginPath();
-                ctx.arc(x, y, 3, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Draw score labels
-                ctx.fillStyle = isCurrentEval ? '#ff6b6b' : '#333';
-                ctx.font = isCurrentEval ? 'bold 16px Arial' : 'bold 14px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(Math.round(eval.overallScore), x, y - 12);
-                
-                // Draw date labels
-                ctx.fillStyle = '#666';
-                ctx.font = '12px Arial';
-                ctx.save();
-                ctx.translate(x, canvas.height - padding + 25);
-                ctx.rotate(-Math.PI / 6);
-                ctx.textAlign = 'right';
-                ctx.fillText(new Date(eval.date).toLocaleDateString(), 0, 0);
-                ctx.restore();
-            });
-            
-            // Draw chart title
-            ctx.fillStyle = '#333';
-            ctx.font = 'bold 16px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('Wellness Score Over Time', canvas.width / 2, 25);
-        }
-
-        function downloadResults() {
-            if (!viewingEvaluationId) {
-                alert('No evaluation selected to download');
-                return;
-            }
-            
-            const evaluation = evaluations.find(e => e.id === viewingEvaluationId);
-            const member = members.find(m => m.id === evaluation.memberId);
-            
-            // Create CSV content
-            let csvContent = 'Athletic Wellness Assessment Report\n';
-            csvContent += `Member:,${member.firstName} ${member.lastName}\n`;
-            csvContent += `Date:,${new Date(evaluation.date).toLocaleDateString()}\n`;
-            csvContent += `Overall Score:,${Math.round(evaluation.overallScore)}\n\n`;
-            
-            // Add detailed results
-            csvContent += 'Body Region,Segment,Pain,ROM,Strength,Score\n';
-            
-            groups.forEach(groupName => {
-                const group = evaluation.groups[groupName];
-                segments[groupName].forEach(segName => {
-                    const segment = group.segments[segName];
-                    csvContent += `${groupName},${segName},${segment.pain},${segment.rom},${segment.strength},${segment.score.toFixed(1)}\n`;
-                });
-            });
-            
-            // Add group totals
-            csvContent += '\nGroup Summary\n';
-            csvContent += 'Body Region,Modifier,Total Score\n';
-            groups.forEach(groupName => {
-                const group = evaluation.groups[groupName];
-                csvContent += `${groupName},${group.modifier},${group.total.toFixed(1)}\n`;
-            });
-            
-            // Add notes if present
-            if (evaluation.notes) {
-                csvContent += `\nNotes:\n"${evaluation.notes.replace(/"/g, '""')}"\n`;
-            }
-            
-            // Create blob and download
-            const blob = new Blob([csvContent], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `wellness-assessment-${member.lastName}-${member.firstName}-${new Date(evaluation.date).toISOString().split('T')[0]}.csv`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        }
-
-        // Utility functions
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
-        }
-
-        // Claude AI Integration Functions
-        async function callClaudeAPI(transcript) {
-            if (!claudeApiKey || !useClaudeAI) {
-                console.log('Claude API not configured, falling back to simple summarization');
-                return generateSimpleNoteSummary(transcript);
-            }
-
-            try {
-                // Use our serverless function instead of direct API call
-                const response = await fetch('/api/summarize', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        transcript: transcript,
-                        apiKey: claudeApiKey
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.log('API error response:', errorText);
-                    
-                    let errorData;
-                    try {
-                        errorData = JSON.parse(errorText);
-                    } catch (e) {
-                        errorData = { error: errorText };
-                    }
-                    
-                    throw new Error(errorData.error || `Server error: ${response.status}`);
-                }
-
-                const data = await response.json();
-                return data.summary;
-                
-            } catch (error) {
-                console.error('Claude API call failed:', error);
-                
-                // Show user-friendly error message
-                const errorMessage = error.message.includes('401') || error.message.includes('Invalid API key') ? 
-                    'Invalid API key. Please check your Claude API key in Settings.' :
-                    error.message.includes('429') || error.message.includes('rate limit') ?
-                    'API rate limit exceeded. Please try again in a moment.' :
-                    error.message.includes('billing') || error.message.includes('credits') || error.message.includes('insufficient_quota') ?
-                    'API billing issue. Please check your Anthropic account billing.' :
-                    error.message.includes('Method not allowed') ?
-                    'Function processing error. Please try again.' :
-                    `AI summarization temporarily unavailable: ${error.message}`;
-                
-                // Fall back to simple summarization
-                console.log(`Falling back to simple summarization: ${errorMessage}`);
-                return generateSimpleNoteSummary(transcript);
+                alert('Evaluation deleted successfully!');
             }
         }
 
-        // Settings Management
-        function saveSettings() {
-            try {
-                const apiKey = document.getElementById('claude-api-key').value.trim();
-                
-                if (apiKey && !apiKey.startsWith('sk-ant-')) {
-                    alert('Invalid API key format. Claude API keys start with "sk-ant-"');
-                    return;
-                }
-                
-                claudeApiKey = apiKey;
-                useClaudeAI = !!apiKey;
-                
-                // Save to localStorage
-                localStorage.setItem('claude-api-key', apiKey);
-                
-                updateSettingsStatus();
-                
-                if (apiKey) {
-                    alert('✅ Claude AI integration enabled! Voice notes will now use intelligent AI summarization.');
-                } else {
-                    alert('Claude AI integration disabled. Voice notes will use simple pattern matching.');
-                }
-                
-            } catch (error) {
-                console.error('Error saving settings:', error);
-                alert('Error saving settings: ' + error.message);
-            }
+        function startEvaluationForMember() {
+            if (!currentMemberId) return;
+            
+            // Switch to evaluation tab with this member pre-selected
+            showTab('evaluation');
+            document.getElementById('eval-member-select').value = currentMemberId;
+            
+            // Clear the notes field before initializing
+            const notesEl = document.getElementById('eval-notes');
+            if (notesEl) notesEl.value = '';
+            
+            selectMemberForEval();
         }
-
-        function loadSettings() {
-            try {
-                const savedApiKey = localStorage.getItem('claude-api-key');
-                if (savedApiKey) {
-                    claudeApiKey = savedApiKey;
-                    useClaudeAI = true;
-                    
-                    // Don't auto-populate the field for security, but update status
-                    updateSettingsStatus();
-                }
-            } catch (error) {
-                console.error('Error loading settings:', error);
-            }
-        }
-
-        async function testClaudeConnection() {
-            const apiKeyField = document.getElementById('claude-api-key');
-            const testKey = apiKeyField.value.trim();
-            
-            if (!testKey) {
-                alert('Please enter your Claude API key first.');
-                return;
-            }
-            
-            if (!testKey.startsWith('sk-ant-')) {
-                alert('Invalid API key format. Claude API keys start with "sk-ant-"');
-                return;
-            }
-            
-            const statusEl = document.getElementById('ai-status');
-            statusEl.innerHTML = '<span style="color: #856404;">🔄 Testing connection...</span>';
-            
-            try {
-                // Test using our serverless function with proper headers
-                const response = await fetch('/api/summarize', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        transcript: 'Test connection. Please respond with: Connection successful.',
-                        apiKey: testKey
-                    })
-                });
-                
-                console.log('Response status:', response.status);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('Response data:', data);
-                    
-                    const modelUsed = data.modelUsed || 'claude-3-sonnet-20240229';
-                    statusEl.innerHTML = `<span style="color: #155724;">✅ Connection successful! Using model: ${modelUsed}</span>`;
-                    statusEl.style.background = '#d4edda';
-                    statusEl.style.borderColor = '#c3e6cb';
-                    
-                    // Auto-save working key
-                    claudeApiKey = testKey;
-                    useClaudeAI = true;
-                    
-                    alert('🎉 Claude AI is now enabled! Voice notes will use intelligent summarization.');
-                } else {
-                    const errorText = await response.text();
-                    console.log('Error response:', errorText);
-                    
-                    let errorData;
-                    try {
-                        errorData = JSON.parse(errorText);
-                    } catch (e) {
-                        errorData = { error: errorText };
-                    }
-                    
-                    throw new Error(errorData.error || `Server error: ${response.status}`);
-                }
-                
-            } catch (error) {
-                console.error('Claude connection test failed:', error);
-                let errorMessage = error.message;
-                
-                // Provide more specific error messages based on common issues
-                if (error.message.includes('model') || error.message.includes('Model')) {
-                    errorMessage = 'Model access issue. Your API key may not have access to Claude models. Please check your Anthropic account subscription and billing.';
-                } else if (error.message.includes('401') || error.message.includes('Invalid API key') || error.message.includes('authentication')) {
-                    errorMessage = 'Invalid API key. Please check your key and try again.';
-                } else if (error.message.includes('billing') || error.message.includes('credits') || error.message.includes('insufficient_quota')) {
-                    errorMessage = 'Billing issue. Please check your Anthropic account has valid payment method and credits.';
-                } else if (error.message.includes('429') || error.message.includes('rate limit')) {
-                    errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
-                } else if (error.message.includes('Method not allowed')) {
-                    errorMessage = 'Function deployment issue. Please wait a moment and try again.';
-                } else if (error.message.includes('Failed to fetch')) {
-                    errorMessage = 'Network error. Please check your internet connection.';
-                }
-                
-                statusEl.innerHTML = `<span style="color: #721c24;">❌ Connection failed: ${errorMessage}</span>`;
-                statusEl.style.background = '#f8d7da';
-                statusEl.style.borderColor = '#f5c6cb';
-            }
-        }
-
-        function updateSettingsStatus() {
-            // Update voice support status
-            const voiceSupportEl = document.getElementById('voice-support-status');
-            if (voiceSupportEl) {
-                const hasVoiceSupport = ('webkitSpeechRecognition' in window) || ('SpeechRecognition' in window);
-                voiceSupportEl.textContent = hasVoiceSupport ? 'Supported ✅' : 'Not Supported ❌';
-                voiceSupportEl.style.color = hasVoiceSupport ? '#28a745' : '#dc3545';
-            }
-            
-            // Update AI support status
-            const aiSupportEl = document.getElementById('ai-support-status');
-            const aiStatusEl = document.getElementById('ai-status');
-            
-            if (useClaudeAI && claudeApiKey) {
-                if (aiSupportEl) {
-                    aiSupportEl.textContent = 'Enabled ✅';
-                    aiSupportEl.style.color = '#28a745';
-                }
-                if (aiStatusEl) {
-                    aiStatusEl.innerHTML = '<span style="color: #155724;">✅ Claude AI summarization active</span>';
-                    aiStatusEl.style.background = '#d4edda';
-                    aiStatusEl.style.borderColor = '#c3e6cb';
-                }
-            } else {
-                if (aiSupportEl) {
-                    aiSupportEl.textContent = 'Disabled ⚠️';
-                    aiSupportEl.style.color = '#856404';
-                }
-                if (aiStatusEl) {
-                    aiStatusEl.innerHTML = '<span style="color: #856404;">⚠️ Enter API key to enable AI summarization</span>';
-                    aiStatusEl.style.background = '#fff3cd';
-                    aiStatusEl.style.borderColor = '#ffeaa7';
-                }
-            }
-        }
-
-        // Data Management Functions
-        function exportAllData() {
-            try {
-                const exportData = {
-                    members: members,
-                    evaluations: evaluations,
-                    exportDate: new Date().toISOString(),
-                    version: '2.0.0'
-                };
-                
-                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `athletic-wellness-backup-${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-                
-                alert('✅ Data exported successfully!');
-            } catch (error) {
-                console.error('Export failed:', error);
-                alert('❌ Export failed: ' + error.message);
-            }
-        }
-
-        function importData() {
-            document.getElementById('import-file').click();
-        }
-
-        function handleDataImport(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importData = JSON.parse(e.target.result);
-                    
-                    // Validate import data structure
-                    if (!importData.members || !importData.evaluations) {
-                        throw new Error('Invalid backup file format');
-                    }
-                    
-                    // Confirm import
-                    const confirmMsg = `Import ${importData.members.length} members and ${importData.evaluations.length} evaluations?\n\nThis will replace all current data!`;
-                    
-                    if (confirm(confirmMsg)) {
-                        members = importData.members;
-                        evaluations = importData.evaluations;
-                        saveData();
-                        updateDashboard();
-                        alert('✅ Data imported successfully!');
-                    }
-                    
-                } catch (error) {
-                    console.error('Import failed:', error);
-                    alert('❌ Import failed: ' + error.message);
-                }
-            };
-            reader.readAsText(file);
-            
-            // Reset file input
-            event.target.value = '';
-        }
-
-        function clearAllData() {
-            const confirmMsg = 'ARE YOU SURE?\n\nThis will permanently delete:\n• All members\n• All evaluations\n• All settings\n\nThis action cannot be undone!';
-            
-            if (confirm(confirmMsg)) {
-                const doubleConfirm = 'Last chance!\n\nType "DELETE" to confirm permanent data deletion:';
-                const userInput = prompt(doubleConfirm);
-                
-                if (userInput === 'DELETE') {
-                    // Clear all data
-                    members = [];
-                    evaluations = [];
-                    localStorage.clear();
-                    
-                    // Reset UI
-                    updateDashboard();
-                    showTab('dashboard');
-                    
-                    alert('🗑️ All data has been permanently deleted.');
-                } else {
-                    alert('Deletion cancelled.');
-                }
-            }
-        }
-
-        // Voice Recording Functions
-        let recognition = null;
-        let isRecording = false;
-        let fullTranscript = '';
-
-        // Initialize speech recognition
-        function initSpeechRecognition() {
-            const voiceBtn = document.getElementById('voice-record-btn');
-            
-            // Enhanced browser detection
-            const hasWebkitSpeech = 'webkitSpeechRecognition' in window;
-            const hasSpeech = 'SpeechRecognition' in window;
-            const isHttps = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-            
-            console.log('Voice support check:', {
-                webkitSpeechRecognition: hasWebkitSpeech,
-                SpeechRecognition: hasSpeech,
-                isHttps: isHttps,
-                userAgent: navigator.userAgent,
-                browser: detectBrowser()
-            });
-            
-            if (!hasWebkitSpeech && !hasSpeech) {
-                console.log('Speech recognition not supported');
-                if (voiceBtn) {
-                    const browserInfo = detectBrowser();
-                    const recommendedBrowser = browserInfo.isFirefox ? 'Chrome or Edge' : 'a supported browser';
-                    
-                    // Replace button with helpful message
-                    voiceBtn.style.display = 'none';
-                    const helpDiv = document.createElement('div');
-                    helpDiv.style.cssText = 'margin-left: 10px; padding: 10px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; font-size: 14px;';
-                    helpDiv.innerHTML = `
-                        <strong>🎤 Voice Recording Not Available</strong><br>
-                        <span style="color: #856404;">
-                            Current browser: ${browserInfo.name}<br>
-                            Try using <strong>${recommendedBrowser}</strong> for voice features.<br>
-                            <a href="#" onclick="showVoiceHelp()" style="color: #667eea;">Learn more</a>
-                        </span>
-                    `;
-                    voiceBtn.parentNode.appendChild(helpDiv);
-                }
-                return;
-            }
-            
-            if (!isHttps) {
-                console.log('Voice recording requires HTTPS');
-                if (voiceBtn) {
-                    voiceBtn.onclick = () => {
-                        alert('🔒 Voice recording requires HTTPS!\n\nYour app is deployed on HTTPS, but you might be accessing it via HTTP. Try:\n• Using the HTTPS URL\n• Clearing browser cache\n• Refreshing the page');
-                    };
-                    voiceBtn.title = 'Voice recording requires HTTPS';
-                }
-                return;
-            }
-
-            // Show voice button if hidden
-            if (voiceBtn) {
-                voiceBtn.style.display = 'inline-block';
-                console.log('Voice recording available');
-            }
-
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.lang = 'en-US';
-
-            recognition.onstart = function() {
-                console.log('Speech recognition started');
-                isRecording = true;
-                const voiceBtn = document.getElementById('voice-record-btn');
-                const recordingStatus = document.getElementById('recording-status');
-                
-                if (voiceBtn) voiceBtn.textContent = '⏹️ Stop Recording';
-                if (recordingStatus) recordingStatus.style.display = 'inline';
-                fullTranscript = '';
-            };
-
-            recognition.onresult = function(event) {
-                let interimTranscript = '';
-                let finalTranscript = '';
-
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const transcript = event.results[i][0].transcript;
-                    if (event.results[i].isFinal) {
-                        finalTranscript += transcript + ' ';
-                    } else {
-                        interimTranscript += transcript;
-                    }
-                }
-
-                if (finalTranscript) {
-                    fullTranscript += finalTranscript;
-                }
-
-                // Update transcript display
-                const transcriptText = document.getElementById('transcript-text');
-                const voiceTranscript = document.getElementById('voice-transcript');
-                
-                if (transcriptText) {
-                    transcriptText.textContent = fullTranscript + interimTranscript;
-                }
-                if (voiceTranscript) {
-                    voiceTranscript.style.display = 'block';
-                }
-            };
-
-            recognition.onerror = function(event) {
-                console.error('Speech recognition error:', event.error);
-                stopRecording();
-                
-                let errorMessage = '';
-                switch(event.error) {
-                    case 'not-allowed':
-                        errorMessage = 'Microphone access denied!\n\nTo enable voice recording:\n1. Click the microphone icon in your browser address bar\n2. Select "Allow"\n3. Refresh the page and try again\n\nNote: Voice recording requires microphone permissions.';
-                        break;
-                    case 'no-speech':
-                        errorMessage = 'No speech detected. Please try again and speak clearly.';
-                        break;
-                    case 'network':
-                        errorMessage = 'Network error occurred. Please check your internet connection and try again.';
-                        break;
-                    case 'service-not-allowed':
-                        errorMessage = 'Speech service not allowed. This might be due to browser restrictions or network issues.';
-                        break;
-                    default:
-                        errorMessage = `Voice recording error: ${event.error}\n\nTry:\n• Refreshing the page\n• Using Chrome or Edge browser\n• Checking microphone permissions`;
-                }
-                
-                alert(errorMessage);
-                
-                // Provide alternative help text
-                const evalNotes = document.getElementById('eval-notes');
-                if (evalNotes && event.error === 'not-allowed') {
-                    evalNotes.placeholder = 'Voice recording requires microphone permissions. Please type your notes manually or allow microphone access.';
-                }
-            };
-
-            recognition.onend = function() {
-                console.log('Speech recognition ended');
-                stopRecording();
-                if (fullTranscript) {
-                    // Call async summarization
-                    summarizeTranscript().catch(error => {
-                        console.error('Summarization error:', error);
-                        // Fallback to simple display if summarization completely fails
-                        const transcriptText = document.getElementById('transcript-text');
-                        if (transcriptText) {
-                            transcriptText.textContent = fullTranscript;
-                        }
-                    });
-                }
-            };
-        }
-
-        // Browser detection utility
-        function detectBrowser() {
-            const userAgent = navigator.userAgent;
-            const browsers = {
-                isChrome: /Chrome/.test(userAgent) && /Google Inc/.test(navigator.vendor),
-                isFirefox: /Firefox/.test(userAgent),
-                isSafari: /Safari/.test(userAgent) && /Apple Computer/.test(navigator.vendor),
-                isEdge: /Edg/.test(userAgent),
-                isOpera: /OPR/.test(userAgent),
-                isMobile: /Mobi|Android/i.test(userAgent)
-            };
-            
-            let name = 'Unknown';
-            if (browsers.isChrome) name = 'Chrome';
-            else if (browsers.isFirefox) name = 'Firefox';
-            else if (browsers.isSafari) name = 'Safari';
-            else if (browsers.isEdge) name = 'Edge';
-            else if (browsers.isOpera) name = 'Opera';
-            
-            return { ...browsers, name };
-        }
-
-        // Show voice help modal
-        function showVoiceHelp() {
-            const helpModal = document.createElement('div');
-            helpModal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
-            
-            const helpContent = document.createElement('div');
-            helpContent.style.cssText = 'background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-width: 500px; margin: 20px;';
-            helpContent.innerHTML = `
-                <h3 style="margin-top: 0; color: #667eea;">🎤 Voice Recording Support</h3>
-                
-                <h4 style="color: #28a745;">✅ Fully Supported Browsers:</h4>
-                <ul style="margin-bottom: 20px;">
-                    <li><strong>Google Chrome</strong> (Recommended)</li>
-                    <li><strong>Microsoft Edge</strong> (Chromium-based)</li>
-                    <li><strong>Samsung Internet</strong></li>
-                </ul>
-                
-                <h4 style="color: #856404;">⚠️ Limited Support:</h4>
-                <ul style="margin-bottom: 20px;">
-                    <li><strong>Safari</strong> (Recent versions only)</li>
-                    <li><strong>Opera</strong></li>
-                </ul>
-                
-                <h4 style="color: #dc3545;">❌ Not Supported:</h4>
-                <ul style="margin-bottom: 20px;">
-                    <li><strong>Firefox</strong> (No Web Speech API)</li>
-                    <li><strong>Internet Explorer</strong></li>
-                </ul>
-                
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                    <strong>💡 Quick Fix:</strong><br>
-                    Download <a href="https://www.google.com/chrome/" target="_blank" style="color: #667eea;">Google Chrome</a> 
-                    or <a href="https://www.microsoft.com/edge" target="_blank" style="color: #667eea;">Microsoft Edge</a> 
-                    for the best voice recording experience.
-                </div>
-                
-                <div style="text-align: center; margin-top: 25px;">
-                    <button class="btn btn-primary" onclick="this.closest('div[style*=fixed]').remove()">Close</button>
-                </div>
-            `;
-            
-            helpModal.appendChild(helpContent);
-            document.body.appendChild(helpModal);
-        }
-
-        // Toggle recording
-        function toggleRecording() {
-            console.log('toggleRecording called, isRecording:', isRecording);
-            
-            if (!recognition) {
-                console.log('Recognition not initialized, initializing...');
-                initSpeechRecognition();
-                if (!recognition) {
-                    alert('Speech recognition is not available in this browser.');
-                    return;
-                }
-            }
-
-            if (isRecording) {
-                console.log('Stopping recording...');
-                recognition.stop();
-            } else {
-                // Check if we're in a secure context
-                if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-                    alert('Voice recording requires HTTPS!\n\n' +
-                          'To use voice features:\n' +
-                          '• Host the app on a web server with HTTPS\n' +
-                          '• Or access via localhost\n' +
-                          '• Or use Chrome with --unsafely-treat-insecure-origin-as-secure flag\n\n' +
-                          'For now, please type your notes manually.');
-                    return;
-                }
-                
-                console.log('Starting recording...');
-                try {
-                    recognition.start();
-                } catch (error) {
-                    console.error('Failed to start recognition:', error);
-                    alert('Failed to start voice recording. Please check microphone permissions.');
-                }
-            }
-        }
-
-        function stopRecording() {
-            isRecording = false;
-            const voiceBtn = document.getElementById('voice-record-btn');
-            const recordingStatus = document.getElementById('recording-status');
-            
-            if (voiceBtn) voiceBtn.textContent = '🎤 Record Voice Note';
-            if (recordingStatus) recordingStatus.style.display = 'none';
-            
-            console.log('Recording stopped');
-        }
-
-        // Summarize the transcript using AI or fallback
-        async function summarizeTranscript() {
-            if (!fullTranscript) return;
-
-            const transcriptEl = document.getElementById('transcript-text');
-            const voiceTranscriptEl = document.getElementById('voice-transcript');
-            
-            // Show loading state
-            if (transcriptEl) {
-                transcriptEl.innerHTML = `
-                    <div style="margin-bottom: 15px;">
-                        <strong>Original:</strong><br>
-                        ${fullTranscript}
-                    </div>
-                    <div>
-                        <strong>Summary:</strong><br>
-                        <span style="color: #667eea;">🔄 ${useClaudeAI ? 'Generating AI summary...' : 'Creating summary...'}</span>
-                    </div>
-                `;
-            }
-
-            try {
-                // Use Claude AI if available, otherwise use simple summarization
-                let summary;
-                if (useClaudeAI && claudeApiKey) {
-                    summary = await callClaudeAPI(fullTranscript);
-                } else {
-                    summary = generateSimpleNoteSummary(fullTranscript);
-                }
-                
-                console.log('Generated summary:', summary);
-                console.log('Using Claude AI:', useClaudeAI);
-                
-                // Update the display with summary - cleaner HTML structure
-                if (transcriptEl) {
-                    transcriptEl.innerHTML = `
-                        <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                            <strong>Original:</strong><br>
-                            <span style="font-style: italic; color: #666;">${fullTranscript}</span>
-                        </div>
-                        <div style="padding: 10px; background: #e8f5e9; border-radius: 5px;">
-                            <strong>Summary ${useClaudeAI ? '(AI)' : '(Simple)'}:</strong><br>
-                            <span id="summary-content">${summary}</span>
-                        </div>
-                    `;
-                }
-                
-            } catch (error) {
-                console.error('Summarization failed:', error);
-                // Fall back to simple summary on error
-                const fallbackSummary = generateSimpleNoteSummary(fullTranscript);
-                if (transcriptEl) {
-                    transcriptEl.innerHTML = `
-                        <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                            <strong>Original:</strong><br>
-                            <span style="font-style: italic; color: #666;">${fullTranscript}</span>
-                        </div>
-                        <div style="padding: 10px; background: #fff3cd; border-radius: 5px;">
-                            <strong>Summary (Fallback):</strong><br>
-                            <span id="summary-content">${fallbackSummary}</span><br>
-                            <small style="color: #dc3545;">Note: AI summarization failed, using simple method</small>
-                        </div>
-                    `;
-                }
-            }
-        }
-
-        function generateSimpleNoteSummary(text) {
-            // Convert to lowercase for analysis
-            const lowerText = text.toLowerCase();
-            
-            // Key phrases to look for
-            const painIndicators = ['pain', 'hurt', 'sore', 'ache', 'discomfort'];
-            const mobilityIndicators = ['range of motion', 'rom', 'mobility', 'movement', 'flexibility', 'stiff'];
-            const strengthIndicators = ['strength', 'weak', 'strong', 'power', 'muscle'];
-            const improvementIndicators = ['better', 'improve', 'progress', 'increase'];
-            const concernIndicators = ['concern', 'issue', 'problem', 'worse', 'decline'];
-            
-            // Extract key points
-            const points = [];
-            
-            // Check for pain mentions
-            if (painIndicators.some(indicator => lowerText.includes(indicator))) {
-                const painMatch = text.match(/(\w+)\s*(pain|hurt|sore|ache|discomfort)/i);
-                if (painMatch) {
-                    points.push(`Pain noted in ${painMatch[1]}`);
-                }
-            }
-            
-            // Check for mobility issues
-            if (mobilityIndicators.some(indicator => lowerText.includes(indicator))) {
-                if (lowerText.includes('limit') || lowerText.includes('restrict') || lowerText.includes('reduce')) {
-                    points.push('Limited ROM observed');
-                } else if (lowerText.includes('good') || lowerText.includes('full')) {
-                    points.push('Good ROM maintained');
-                }
-            }
-            
-            // Check for strength observations
-            if (strengthIndicators.some(indicator => lowerText.includes(indicator))) {
-                if (lowerText.includes('weak') || lowerText.includes('decrease')) {
-                    points.push('Weakness noted');
-                } else if (lowerText.includes('good') || lowerText.includes('strong')) {
-                    points.push('Strength adequate');
-                }
-            }
-            
-            // Check for improvement
-            if (improvementIndicators.some(indicator => lowerText.includes(indicator))) {
-                points.push('Improvement observed');
-            }
-            
-            // Check for concerns
-            if (concernIndicators.some(indicator => lowerText.includes(indicator))) {
-                points.push('Areas of concern identified');
-            }
-            
-            // Extract any mentioned body parts
-            const bodyParts = ['shoulder', 'elbow', 'wrist', 'hand', 'hip', 'knee', 'ankle', 'foot', 'back', 'neck'];
-            const mentionedParts = bodyParts.filter(part => lowerText.includes(part));
-            if (mentionedParts.length > 0) {
-                points.push(`Focus areas: ${mentionedParts.join(', ')}`);
-            }
-            
-            // If no specific points found, create a generic summary
-            if (points.length === 0) {
-                // Take first 100 characters and add ellipsis
-                const shortened = text.substring(0, 100).trim();
-                return shortened + (text.length > 100 ? '...' : '');
-            }
-            
-            // Combine points into summary
-            return points.join('. ') + '.';
-        }
-
-        function useTranscript() {
-            const transcriptTextEl = document.getElementById('transcript-text');
-            if (!transcriptTextEl) return;
-            
-            console.log('useTranscript called');
-            console.log('Transcript element HTML:', transcriptTextEl.innerHTML);
-            
-            let summary = '';
-            
-            // Method 1: Try to get summary from the specific summary-content element
-            const summaryContentEl = document.getElementById('summary-content');
-            if (summaryContentEl) {
-                summary = summaryContentEl.textContent || summaryContentEl.innerText || '';
-                console.log('Found summary from summary-content element:', summary);
-            }
-            
-            // Method 2: Extract from HTML if Method 1 failed
-            if (!summary || summary.trim().length < 10) {
-                console.log('Trying to extract from HTML...');
-                const innerHTML = transcriptTextEl.innerHTML;
-                
-                // Try multiple patterns to extract the summary
-                let summaryMatch = null;
-                
-                // Pattern 1: Look for "Summary (AI):" or "Summary (Simple):"
-                summaryMatch = innerHTML.match(/<strong>Summary\s*\([^)]+\):\s*<\/strong>\s*<br>\s*<span[^>]*>([^<]+)<\/span>/is);
-                
-                // Pattern 2: Look for just "Summary:"
-                if (!summaryMatch) {
-                    summaryMatch = innerHTML.match(/<strong>Summary:\s*<\/strong>\s*<br>\s*<span[^>]*>([^<]+)<\/span>/is);
-                }
-                
-                // Pattern 3: Look for content after any "Summary" label
-                if (!summaryMatch) {
-                    summaryMatch = innerHTML.match(/<strong>[^<]*Summary[^<]*:\s*<\/strong>\s*<br>\s*<span[^>]*>([^<]+)<\/span>/is);
-                }
-                
-                if (summaryMatch && summaryMatch[1]) {
-                    summary = summaryMatch[1].trim();
-                    console.log('Extracted summary from HTML pattern:', summary);
-                }
-            }
-            
-            // Method 3: Try text content parsing if still no summary
-            if (!summary || summary.trim().length < 10) {
-                console.log('Trying text content parsing...');
-                const textContent = transcriptTextEl.textContent || transcriptTextEl.innerText || '';
-                const summaryIndex = textContent.toLowerCase().indexOf('summary');
-                
-                if (summaryIndex > -1) {
-                    const colonIndex = textContent.indexOf(':', summaryIndex);
-                    if (colonIndex > -1) {
-                        summary = textContent.substring(colonIndex + 1).trim();
-                        // Remove any "Note:" text and everything after it
-                        const noteIndex = summary.toLowerCase().indexOf('note:');
-                        if (noteIndex > -1) {
-                            summary = summary.substring(0, noteIndex).trim();
-                        }
-                        console.log('Extracted summary from text content:', summary);
-                    }
-                }
-            }
-            
-            // Method 4: Last resort - use full transcript
-            if (!summary || summary.trim().length < 10) {
-                console.log('No valid summary found, using full transcript as fallback');
-                summary = fullTranscript || 'No transcript available';
-            }
-            
-            // Clean up the summary
-            summary = summary.replace(/\s+/g, ' ').trim();
-            
-            console.log('Final summary to be used:', summary);
-            
-            // Add to existing notes or replace
-            const evalNotesEl = document.getElementById('eval-notes');
-            if (!evalNotesEl) {
-                console.error('Could not find eval-notes element');
-                return;
-            }
-            
-            const currentNotes = evalNotesEl.value;
-            
-            if (currentNotes.trim()) {
-                evalNotesEl.value = currentNotes + '\n\n' + summary;
-            } else {
-                evalNotesEl.value = summary;
-            }
-            
-            // Clear the transcript display
-            clearTranscript();
-            
-            // Show confirmation with visual feedback
-            console.log('Summary successfully added to eval notes');
-            evalNotesEl.style.backgroundColor = '#e8f5e9';
-            evalNotesEl.style.border = '2px solid #28a745';
-            
-            setTimeout(() => {
-                evalNotesEl.style.backgroundColor = '';
-                evalNotesEl.style.border = '';
-            }, 1500);
-            
-            // Optional: Show a brief success message
-            const successMsg = document.createElement('div');
-            successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #28a745; color: white; padding: 10px 15px; border-radius: 5px; z-index: 1000; font-size: 14px;';
-            successMsg.textContent = '✅ Summary added to notes!';
-            document.body.appendChild(successMsg);
-            
-            setTimeout(() => {
-                if (successMsg.parentNode) {
-                    successMsg.parentNode.removeChild(successMsg);
-                }
-            }, 2000);
-        }
-
-        function clearTranscript() {
-            fullTranscript = '';
-            const transcriptDiv = document.getElementById('voice-transcript');
-            const transcriptText = document.getElementById('transcript-text');
-            
-            if (transcriptDiv) {
-                transcriptDiv.style.display = 'none';
-            }
-            if (transcriptText) {
-                transcriptText.textContent = '';
-            }
-        }
-
-        // Voice test function for debugging
-        function testVoiceFeature() {
-            console.log('=== Voice Feature Test ===');
-            console.log('Voice button element:', document.getElementById('voice-record-btn'));
-            console.log('Recording status element:', document.getElementById('recording-status'));
-            console.log('Transcript element:', document.getElementById('voice-transcript'));
-            console.log('Recognition object:', recognition);
-            console.log('Is recording:', isRecording);
-            
-            // Test speech recognition support
-            const hasWebkitSpeech = 'webkitSpeechRecognition' in window;
-            const hasSpeech = 'SpeechRecognition' in window;
-            console.log('webkitSpeechRecognition support:', hasWebkitSpeech);
-            console.log('SpeechRecognition support:', hasSpeech);
-            console.log('Protocol:', location.protocol);
-            console.log('Hostname:', location.hostname);
-            
-            const browserInfo = detectBrowser();
-            console.log('Browser detection:', browserInfo);
-            
-            return {
-                voiceButton: !!document.getElementById('voice-record-btn'),
-                speechSupport: hasWebkitSpeech || hasSpeech,
-                secureContext: location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1',
-                recognitionReady: !!recognition,
-                browser: browserInfo.name,
-                isRecommendedBrowser: browserInfo.isChrome || browserInfo.isEdge
-            };
-        }
-
-        // Make test function globally available
-        window.testVoiceFeature = testVoiceFeature;
-        window.showTab = showTab;
-        window.addMember = addMember;
-        window.searchMemberList = searchMemberList;
-        window.viewMemberProfile = viewMemberProfile;
-        window.enableEditMode = enableEditMode;
-        window.cancelEdit = cancelEdit;
-        window.saveMemberEdits = saveMemberEdits;
-        window.deleteMember = deleteMember;
-        window.backToMemberList = backToMemberList;
-        window.startEvaluationForMember = startEvaluationForMember;
-        window.selectMemberForEval = selectMemberForEval;
-        window.toggleGroup = toggleGroup;
-        window.updateSegmentScore = updateSegmentScore;
-        window.changeModifier = changeModifier;
-        window.saveEvaluation = saveEvaluation;
-        window.resetEvaluation = resetEvaluation;
-        window.editCurrentEvaluation = editCurrentEvaluation;
-        window.startNewEvaluation = startNewEvaluation;
-        window.viewEvaluation = viewEvaluation;
-        window.exportResults = exportResults;
-        window.exportMemberProfile = exportMemberProfile;
-        window.downloadResults = downloadResults;
-        window.deleteEvaluation = deleteEvaluation;
-        window.deleteCurrentEvaluation = deleteCurrentEvaluation;
-        window.toggleRecording = toggleRecording;
-        window.useTranscript = useTranscript;
-        window.clearTranscript = clearTranscript;
-        window.testVoiceFeature = testVoiceFeature;
-        window.saveSettings = saveSettings;
-        window.testClaudeConnection = testClaudeConnection;
-        window.exportAllData = exportAllData;
-        window.importData = importData;
-        window.handleDataImport = handleDataImport;
-        window.clearAllData = clearAllData;
-        window.showVoiceHelp = showVoiceHelp;
+        // Placeholder functions for features not yet implemented
+        function enableEditMode() { console.log('Enable edit mode'); }
+        function cancelEdit() { console.log('Cancel edit'); }
+        function saveMemberEdits() { console.log('Save member edits'); }
+        function deleteMember() { console.log('Delete member'); }
+        function exportResults() { console.log('Export results'); }
+        function exportMemberProfile() { console.log('Export member profile'); }
+        function downloadResults() { console.log('Download results'); }
+        function deleteEvaluation() { console.log('Delete evaluation'); }
+        function deleteCurrentEvaluation() { console.log('Delete current evaluation'); }
+        function toggleRecording() { console.log('Toggle recording'); }
+        function useTranscript() { console.log('Use transcript'); }
+        function clearTranscript() { console.log('Clear transcript'); }
+        function testVoiceFeature() { console.log('Test voice feature'); }
+        function saveSettings() { console.log('Save settings'); }
+        function testClaudeConnection() { console.log('Test Claude connection'); }
+        function exportAllData() { console.log('Export all data'); }
+        function importData() { console.log('Import data'); }
+        function handleDataImport() { console.log('Handle data import'); }
+        function clearAllData() { console.log('Clear all data'); }
+        function showVoiceHelp() { console.log('Show voice help'); }
+        function loadSettings() { console.log('Load settings'); }
+        function updateSettingsStatus() { console.log('Update settings status'); }
+        function initSpeechRecognition() { console.log('Init speech recognition'); }
     </script>
 </body>
 </html>
